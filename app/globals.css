@@ -7,9 +7,6 @@
   Shadows: warm-tinted, never neutral black
 */
 
-/* ── Google Fonts — variable ── */
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400&family=Bebas+Neue&display=swap");
-
 :root {
   /* Surfaces */
   --paper: #0c0a14;
@@ -84,7 +81,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-dm-sans), system-ui, -apple-system, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -107,7 +104,7 @@ button:focus-visible {
 
 /* ── Micro label — mono uppercase 7-9px +0.6px tracking ── */
 .micro {
-  font-family: "DM Mono", ui-monospace, monospace;
+  font-family: var(--font-dm-mono), ui-monospace, monospace;
   font-size: 9px;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -123,7 +120,7 @@ button:focus-visible {
 
 /* ── GTA stencil for LEONIDA wordmark ── */
 .gta-stencil {
-  font-family: "Bebas Neue", "DM Sans", sans-serif;
+  font-family: var(--font-bebas), var(--font-dm-sans), sans-serif;
   font-weight: 400;
   letter-spacing: 0.04em;
   line-height: 0.9;

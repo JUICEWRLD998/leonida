@@ -1,5 +1,27 @@
 import type { Metadata } from "next";
+import { DM_Sans, DM_Mono, Bebas_Neue } from "next/font/google";
 import "./globals.css";
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-dm-sans",
+  display: "swap",
+});
+
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-dm-mono",
+  display: "swap",
+});
+
+const bebas = Bebas_Neue({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-bebas",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "LEONIDA — Evidence Locker",
@@ -20,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className={`h-full antialiased ${dmSans.variable} ${dmMono.variable} ${bebas.variable}`}>
       <body className="min-h-full flex flex-col bg-[var(--paper)] text-[var(--ink)]">
         {children}
       </body>
