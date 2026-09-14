@@ -2,22 +2,17 @@
 
 import dynamic from "next/dynamic";
 import { useRef, useState, useCallback, useEffect } from "react";
-import type {
-  ImageEditorInstance,
-  ImageEditorSaveResult,
-} from "@unlayer/react-image-editor";
+import type { ImageEditorInstance, ImageEditorSaveResult } from "@unlayer/react-image-editor";
 
 const ImageEditor = dynamic(
   () => import("@unlayer/react-image-editor").then((m) => m.ImageEditor),
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[520px] items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg-1)]">
+      <div className="flex h-[520px] items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
-          <span className="font-mono text-xs tracking-widest text-[var(--text-2)]">
-            INITIALIZING FORENSICS TERMINAL…
-          </span>
+          <span className="micro text-[var(--muted)]">Initializing forensics terminal…</span>
         </div>
       </div>
     ),
@@ -54,15 +49,12 @@ export function ForensicsTerminal({ image, onSubmit, onError }: Props) {
     }
   }, []);
 
-  useEffect(() => {
-    return () => stopPolling();
-  }, [stopPolling]);
+  useEffect(() => () => stopPolling(), [stopPolling]);
 
   const startPolling = useCallback(() => {
     stopPolling();
     pollRef.current = setInterval(() => {
-      const v = editorRef.current?.hasChanges() ?? false;
-      setHasChanges(v);
+      setHasChanges(editorRef.current?.hasChanges() ?? false);
     }, 400);
   }, [stopPolling]);
 
@@ -76,58 +68,36 @@ export function ForensicsTerminal({ image, onSubmit, onError }: Props) {
     [startPolling]
   );
 
-  const handleSave = useCallback(
-    (result: ImageEditorSaveResult) => {
-      onSubmit(result.dataUrl, result.blob);
-    },
-    [onSubmit]
-  );
-
-  const handleError = useCallback(
-    (err: Error) => {
-      onError?.(err.message || "Terminal failed to load");
-    },
-    [onError]
-  );
-
+  const handleSave = useCallback((r: ImageEditorSaveResult) => onSubmit(r.dataUrl, r.blob), [onSubmit]);
+  const handleError = useCallback((err: Error) => onError?.(err.message || "Terminal failed to load"), [onError]);
   const handleLoadError = useCallback(() => {
     setLoadFailed(true);
     onError?.("Evidence image failed to load into editor");
   }, [onError]);
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Status bar */}
-      <div className="flex items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--bg-1)] px-3 py-2">
-        <div className="flex items-center gap-2">
-          <span
-            className={`h-2 w-2 rounded-full ${ready ? "bg-[var(--accent)] shadow-[0_0_6px_var(--accent)]" : "bg-[var(--warning)] animate-pulse"}`}
-          />
-          <span className="font-mono text-xs tracking-widest text-[var(--text-2)]">
-            {loadFailed
-              ? "EVIDENCE CORRUPTED — RETRY"
-              : ready
-                ? "SYSTEM ONLINE — EDIT TO TAMPER"
-                : "BOOTING…"}
+    <div className="flex flex-col gap-4">
+      {/* Status */}
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 py-2.5">
+        <div className="flex items-center gap-2.5">
+          <span className={`h-2 w-2 rounded-full ${ready ? "bg-[var(--success)] shadow-[0_0_8px_rgba(20,240,184,0.5)]" : "bg-[var(--warning)] animate-[pulse-dot_1.2s_ease-in-out_infinite]"}`} />
+          <span className="text-xs font-medium tracking-[-0.15px] text-[var(--ink)]">
+            {loadFailed ? "Evidence corrupted — retry" : ready ? "System online — edit to tamper" : "Booting…"}
           </span>
         </div>
-        <span className="hidden font-mono text-[10px] tracking-widest text-[var(--text-3)] sm:inline">
-          CROP · DRAW · FILTER · STICKER · TEXT · SHAPES · FRAME
-        </span>
+        <span className="micro hidden text-[var(--faint)] sm:inline">Crop · Draw · Filter · Sticker · Text · Shapes · Frame</span>
         {ready && (
-          <span
-            className={`rounded px-2 py-0.5 font-mono text-[10px] font-bold tracking-widest ${hasChanges ? "bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30" : "bg-[var(--bg-2)] text-[var(--text-3)] border border-[var(--border)]"}`}
-          >
-            {hasChanges ? "● TAMPERED" : "○ NO CHANGES"}
+          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold tracking-[-0.15px] ${hasChanges ? "bg-[var(--success-soft)] text-[var(--success)] ring-1 ring-[var(--success-line)]" : "bg-[var(--paper-soft)] text-[var(--faint)] ring-1 ring-[var(--line)]"}`}>
+            {hasChanges ? "● Tampered" : "○ No changes"}
           </span>
         )}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-1)]">
+      <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)]">
         <ImageEditor
           image={image}
           minHeight={520}
-          style={{ borderRadius: 12, overflow: "hidden" } as React.CSSProperties}
+          style={{ borderRadius: 16, overflow: "hidden" } as React.CSSProperties}
           options={{ theme: "dark" }}
           onLoad={handleLoad}
           onSave={handleSave}
@@ -137,17 +107,13 @@ export function ForensicsTerminal({ image, onSubmit, onError }: Props) {
       </div>
 
       {loadFailed && (
-        <div className="rounded-lg border border-[var(--danger)]/30 bg-[var(--danger)]/10 px-4 py-3 text-center">
-          <p className="font-mono text-xs text-[var(--danger)]">
-            Evidence failed to load. Try again or go back to the locker.
-          </p>
+        <div className="rounded-2xl border border-[var(--danger-line)] bg-[var(--danger-soft)] px-4 py-3 text-center">
+          <p className="text-sm font-medium text-[var(--danger)]">Evidence failed to load. Try again or go back to the locker.</p>
         </div>
       )}
 
-      <p className="text-center font-mono text-[10px] tracking-widest text-[var(--text-3)]">
-        {ready
-          ? "Edit the image above, then press SAVE inside the editor to submit to forensics."
-          : "Waiting for terminal…"}
+      <p className="micro text-center text-[var(--faint)]">
+        {ready ? "Edit the image above, then press Save inside the editor to submit to forensics." : "Waiting for terminal…"}
       </p>
     </div>
   );

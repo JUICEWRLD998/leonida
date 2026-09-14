@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { EVIDENCE } from "@/lib/evidence";
 import { scoreForensics, type ScoreResult } from "@/lib/scorer";
 import { generatePoster } from "@/lib/poster";
-import { leonidaCoverDataUrl } from "@/lib/cover";
 import { ForensicsTerminal } from "@/components/ForensicsTerminal";
 import { ForensicSweep } from "@/components/ForensicSweep";
 import { VerdictScreen } from "@/components/VerdictScreen";
 
+// ── State ──────────────────────────────────────────────────────────
 type GamePhase = "landing" | "evidence" | "terminal" | "scanning" | "verdict" | "complete";
 
 type GameState = {
@@ -21,8 +21,6 @@ type GameState = {
 };
 
 export default function Home() {
-  const coverUrl = leonidaCoverDataUrl();
-
   const [state, setState] = useState<GameState>({
     evidenceIndex: 0,
     phase: "landing",
@@ -35,25 +33,17 @@ export default function Home() {
   const evidence = EVIDENCE[state.evidenceIndex];
   const isLast = state.evidenceIndex === EVIDENCE.length - 1;
 
-  const handleEnter = useCallback(() => {
-    setState((s) => ({ ...s, phase: "evidence" }));
-  }, []);
-
-  const handleOpenTerminal = useCallback(() => {
-    setState((s) => ({ ...s, phase: "terminal", score: null, posterUrl: null }));
-  }, []);
-
-  const handleBackToEvidence = useCallback(() => {
-    setState((s) => ({ ...s, phase: "evidence" }));
-  }, []);
+  const handleEnter = useCallback(() => setState((s) => ({ ...s, phase: "evidence" })), []);
+  const handleOpenTerminal = useCallback(
+    () => setState((s) => ({ ...s, phase: "terminal", score: null, posterUrl: null })),
+    []
+  );
+  const handleBack = useCallback(() => setState((s) => ({ ...s, phase: "evidence" })), []);
 
   const handleSubmit = useCallback(
-    async (dataUrl: string, _blob: Blob) => {
+    async (dataUrl: string) => {
       setState((s) => ({ ...s, phase: "scanning", editedDataUrl: dataUrl }));
-
-      // Let the scanning animation show for a beat, then score
-      await new Promise((r) => setTimeout(r, 1300));
-
+      await new Promise((r) => setTimeout(r, 1200));
       const ev = EVIDENCE[state.evidenceIndex];
       let result: ScoreResult;
       try {
@@ -68,7 +58,6 @@ export default function Home() {
           verdict: "BUSTED",
         };
       }
-
       let posterUrl: string | null = null;
       if (result.verdict === "DISMISSED") {
         try {
@@ -77,11 +66,8 @@ export default function Home() {
             score: result.tamperScore,
             dismissed: true,
           });
-        } catch {
-          // poster is bonus — don't fail the verdict if it errors
-        }
+        } catch {}
       }
-
       setState((s) => ({
         ...s,
         phase: "verdict",
@@ -93,10 +79,9 @@ export default function Home() {
     [state.evidenceIndex]
   );
 
-  const handleNextEvidence = useCallback(() => {
-    if (isLast) {
-      setState((s) => ({ ...s, phase: "complete" }));
-    } else {
+  const handleNext = useCallback(() => {
+    if (isLast) setState((s) => ({ ...s, phase: "complete" }));
+    else
       setState((s) => ({
         ...s,
         evidenceIndex: s.evidenceIndex + 1,
@@ -105,538 +90,380 @@ export default function Home() {
         score: null,
         posterUrl: null,
       }));
-    }
   }, [isLast]);
 
-  const handleRetry = useCallback(() => {
-    setState((s) => ({ ...s, phase: "terminal", score: null }));
-  }, []);
-
-  const handleRestart = useCallback(() => {
-    setState({
-      evidenceIndex: 0,
-      phase: "landing",
-      editedDataUrl: null,
-      score: null,
-      posterUrl: null,
-      posters: [],
-    });
-  }, []);
+  const handleRetry = useCallback(() => setState((s) => ({ ...s, phase: "terminal", score: null })), []);
+  const handleRestart = useCallback(
+    () =>
+      setState({
+        evidenceIndex: 0,
+        phase: "landing",
+        editedDataUrl: null,
+        score: null,
+        posterUrl: null,
+        posters: [],
+      }),
+    []
+  );
 
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--bg-1)]/95 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-[1024px] items-center justify-between px-4 sm:px-6">
-          <button
-            onClick={handleRestart}
-            className="flex items-center gap-3 text-left"
-          >
-            <div className="flex h-7 w-7 items-center justify-center rounded bg-[var(--accent)] text-[10px] font-bold tracking-widest text-[var(--bg-0)]">
-              LPD
+    <div className="flex min-h-screen flex-col bg-[var(--paper)]">
+      {/* ═══ NAV ═══ */}
+      <nav className="sticky top-0 z-30 border-b border-[var(--line)] bg-[var(--paper)]/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-[56px] max-w-[1120px] items-center justify-between gap-4 px-5 sm:px-8">
+          <button onClick={handleRestart} className="flex items-center gap-3 text-left">
+            <div className="grid h-8 w-8 place-items-center rounded-[9px] bg-[var(--accent)] text-[11px] font-bold tracking-widest text-[var(--on-accent)] shadow-[0_2px_0_rgba(232,72,20,0.12)]">
+              L
             </div>
-            <div>
-              <p
-                className="text-[11px] font-bold tracking-[0.18em] text-[var(--text-1)]"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                LEONIDA
-              </p>
-              <p className="text-[9px] tracking-[0.2em] text-[var(--text-2)]">
-                EVIDENCE LOCKER
-              </p>
+            <div className="leading-none">
+              <p className="text-[13px] font-semibold tracking-[-0.35px] text-[var(--ink)]">Leonida</p>
+              <p className="micro text-[var(--muted)]">Evidence Locker</p>
             </div>
           </button>
 
-          <div className="hidden items-center gap-1 sm:flex">
-            {[0, 1, 2, 3, 4].map((i) => {
-              const filled = state.phase !== "complete" && i < 5 - state.posters.length;
+          {/* Center — progress pills (desktop) */}
+          <div className="hidden items-center gap-2 sm:flex">
+            {EVIDENCE.map((ev, i) => {
+              const done = state.posters.length > i;
+              const active = state.evidenceIndex === i && state.phase !== "landing" && state.phase !== "complete";
               return (
-                <span
-                  key={i}
-                  className="text-sm leading-none transition-colors"
-                  style={{
-                    color: filled ? "var(--warning)" : "var(--bg-3)",
-                    filter: filled ? "drop-shadow(0 0 4px var(--warning))" : undefined,
-                    opacity: filled ? 1 : 0.35,
-                  }}
-                  aria-hidden
+                <div
+                  key={ev.id}
+                  className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                    done
+                      ? "border-[var(--success-line)] bg-[var(--success-soft)] text-[var(--success)]"
+                      : active
+                        ? "border-[var(--line-strong)] bg-[var(--surface)] text-[var(--ink)]"
+                        : "border-[var(--line)] bg-transparent text-[var(--faint)]"
+                  }`}
                 >
-                  ★
-                </span>
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${done ? "bg-[var(--success)]" : active ? "bg-[var(--accent)] animate-[pulse-dot_1.2s_ease-in-out_infinite]" : "bg-[var(--line-strong)]"}`}
+                  />
+                  <span className="hidden text-[11px] font-medium tracking-[-0.15px] lg:inline">{ev.id}</span>
+                  <span className="text-[11px] font-medium lg:hidden">{i + 1}</span>
+                </div>
               );
             })}
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="rounded bg-[var(--bg-2)] px-2 py-1 font-mono text-xs text-[var(--text-2)]">
+            <span className="hidden rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 font-mono text-[10px] tracking-widest text-[var(--muted)] sm:inline">
               CASE LEONIDA
             </span>
-            <span className="rounded bg-[var(--accent)]/10 px-2 py-1 font-mono text-xs font-bold text-[var(--accent)]">
-              {state.posters.length} / {EVIDENCE.length} DISMISSED
+            <span className="rounded-full bg-[var(--ink)] px-3 py-1.5 text-xs font-semibold tracking-[-0.2px] text-[var(--paper)]">
+              {state.posters.length} / {EVIDENCE.length} dismissed
             </span>
           </div>
         </div>
-      </header>
+      </nav>
 
-      {/* ── Main ── */}
-      <main className="mx-auto flex w-full max-w-[1024px] flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8">
-        {state.phase === "landing" && (
-          <LandingCover coverUrl={coverUrl} onEnter={handleEnter} />
-        )}
-
+      {/* ═══ MAIN ═══ */}
+      <main className="mx-auto flex w-full max-w-[1120px] flex-1 flex-col px-5 py-6 sm:px-8 sm:py-8">
+        {state.phase === "landing" && <Landing onEnter={handleEnter} posters={state.posters.length} />}
         {state.phase === "evidence" && (
-          <EvidenceView
-            evidence={evidence}
-            index={state.evidenceIndex}
-            total={EVIDENCE.length}
-            onOpenTerminal={handleOpenTerminal}
-          />
+          <EvidenceView evidence={evidence} index={state.evidenceIndex} total={EVIDENCE.length} onOpen={handleOpenTerminal} />
         )}
-
         {state.phase === "terminal" && (
           <div className="flex flex-col gap-4">
-            <button
-              onClick={handleBackToEvidence}
-              className="self-start font-mono text-xs tracking-widest text-[var(--text-2)] hover:text-[var(--text-1)]"
-            >
-              ← BACK TO EVIDENCE
+            <button onClick={handleBack} className="self-start rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:border-[var(--line-strong)] hover:text-[var(--ink)]">
+              ← Back to evidence
             </button>
-            <ForensicsTerminal
-              image={evidence.imageBase64}
-              onSubmit={handleSubmit}
-              onError={() => {}}
-            />
+            <ForensicsTerminal image={evidence.imageBase64} onSubmit={handleSubmit} />
           </div>
         )}
-
         {state.phase === "scanning" && (
-          <div className="flex flex-col gap-4">
-            <EvidencePreview
-              evidence={evidence}
-              editedDataUrl={state.editedDataUrl}
-            />
+          <div className="flex flex-col gap-5">
+            <EvidencePreview evidence={evidence} editedUrl={state.editedDataUrl} />
             <ForensicSweep scanning score={null} />
           </div>
         )}
-
         {state.phase === "verdict" && state.score && (
-          <div className="flex flex-col gap-6">
-            <EvidencePreview
-              evidence={evidence}
-              editedDataUrl={state.editedDataUrl}
-            />
+          <div className="flex flex-col gap-5">
+            <EvidencePreview evidence={evidence} editedUrl={state.editedDataUrl} />
             <ForensicSweep scanning={false} score={state.score} />
-            <VerdictScreen
-              verdict={state.score.verdict}
-              score={state.score}
-              onNext={handleNextEvidence}
-              onRetry={handleRetry}
-              isLast={isLast}
-            />
-            {state.posterUrl && (
-              <PosterCard
-                posterUrl={state.posterUrl}
-                caseLabel={evidence.id}
-              />
-            )}
+            <VerdictScreen verdict={state.score.verdict} score={state.score} onNext={handleNext} onRetry={handleRetry} isLast={isLast} />
+            {state.posterUrl && <PosterCard posterUrl={state.posterUrl} caseLabel={evidence.id} />}
           </div>
         )}
-
-        {state.phase === "complete" && (
-          <CompleteView posters={state.posters} onRestart={handleRestart} />
-        )}
+        {state.phase === "complete" && <Complete posters={state.posters} onRestart={handleRestart} />}
       </main>
 
-      <footer className="border-t border-[var(--border)] py-4 text-center">
-        <p className="font-mono text-[10px] tracking-widest text-[var(--text-3)]">
-          LEONIDA POLICE DEPT. — FORENSICS DIVISION — BUILD WITH REACT IMAGE EDITOR
-        </p>
-        <p className="mt-1 font-mono text-[9px] tracking-widest text-[var(--text-3)]/60">
-          GTA VI INSPIRED — NOT AFFILIATED WITH ROCKSTAR GAMES — #BuiltWithImageEditor
-        </p>
+      <footer className="border-t border-[var(--line)] py-5 text-center">
+        <p className="micro tracking-[0.5px] text-[var(--faint)]">Leonida Police Dept. — Forensics Division — Built with React Image Editor</p>
+        <p className="micro mt-1 text-[7px] tracking-[0.4px] text-[var(--faint)] opacity-60">GTA VI inspired — not affiliated with Rockstar Games — #BuiltWithImageEditor</p>
       </footer>
     </div>
   );
 }
 
-/* ── Landing — cover hero ── */
-function LandingCover({
-  coverUrl,
-  onEnter,
-}: {
-  coverUrl: string;
-  onEnter: () => void;
-}) {
+// ── Landing ────────────────────────────────────────────────────
+function Landing({ onEnter, posters }: { onEnter: () => void; posters: number }) {
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      {/* Cover */}
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--border)]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={coverUrl}
-          alt="Leonida sunset — Vice City horizon"
-          className="h-[340px] w-full object-cover sm:h-[420px]"
-        />
-        {/* Gradient overlay for text legibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-0)] via-[var(--bg-0)]/40 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg-0)]/60 via-transparent to-[var(--bg-0)]/30" />
+    <div className="flex flex-1 flex-col gap-8">
+      {/* Hero — real GTA VI cover */}
+      <div className="relative overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-raised)]">
+        <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/gta6-cover.jpg" alt="Grand Theft Auto VI — Leonida" className="h-[360px] w-full object-cover object-top sm:h-[460px]" />
+          {/* Warm gradient so text stays legible */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0a14] via-[#0c0a14]/55 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0c0a14]/70 via-transparent to-transparent" />
 
-        {/* Title on cover */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-          <p className="font-mono text-xs tracking-[0.35em] text-[var(--accent)]">
-            VICE CITY — LEONIDA — 02:14 AM
-          </p>
-          <h1
-            className="mt-2 text-5xl font-black tracking-tighter text-white sm:text-7xl"
-            style={{
-              fontFamily: "var(--font-display)",
-              textShadow: "0 2px 24px rgba(0,0,0,0.8), 0 0 40px rgba(20,240,184,0.15)",
-            }}
-          >
-            LEONIDA
-          </h1>
-          <p
-            className="text-xl font-black tracking-[0.25em] text-white/90 sm:text-2xl"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            EVIDENCE LOCKER
-          </p>
-          <p className="mt-3 max-w-lg font-mono text-xs leading-relaxed text-white/70 sm:text-sm">
-            Three surveillance photos. Two incriminating details each. Doctor the
-            evidence before forensics clears the case — crop, redact, blur, and
-            deceive.
-          </p>
-        </div>
+          {/* Eyebrow */}
+          <div className="absolute left-5 top-5 flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 backdrop-blur-md sm:left-7 sm:top-6">
+            <span className="h-2 w-2 animate-[pulse-dot_1.4s_ease-in-out_infinite] rounded-full bg-[var(--danger)] shadow-[0_0_8px_var(--danger)]" />
+            <span className="micro text-white/90">Case Leonida — 3 items pending</span>
+          </div>
 
-        {/* Top badge */}
-        <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-3 py-1.5 backdrop-blur">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--danger)] shadow-[0_0_6px_var(--danger)]" />
-          <span className="font-mono text-xs tracking-widest text-white/90">
-            CASE LEONIDA — 3 ITEMS PENDING
-          </span>
-        </div>
-      </div>
-
-      {/* CTA */}
-      <div className="flex flex-col items-center gap-3 py-2">
-        <button
-          onClick={onEnter}
-          className="group relative overflow-hidden rounded-xl bg-[var(--accent)] px-10 py-4 font-mono text-sm font-bold tracking-widest text-[var(--bg-0)] shadow-[0_0_24px_var(--accent-glow)] transition-all hover:bg-[var(--accent-dim)] hover:shadow-[0_0_32px_rgba(20,240,184,0.3)] active:scale-[0.98]"
-        >
-          ENTER EVIDENCE LOCKER →
-        </button>
-        <span className="font-mono text-[10px] tracking-widest text-[var(--text-3)]">
-          BUILT WITH REACT IMAGE EDITOR — EVERY TOOL IS A TAMPERING METHOD
-        </span>
-      </div>
-
-      {/* How it works */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          {
-            step: "01",
-            title: "EVIDENCE IN",
-            desc: "Surveillance photo with flagged face + plate. You know what to hide.",
-          },
-          {
-            step: "02",
-            title: "TAMPER",
-            desc: "Crop, draw, filter, sticker — the editor is the weapon. No edit = BUSTED.",
-          },
-          {
-            step: "03",
-            title: "BEAT FORENSICS",
-            desc: "Deterministic pixel scan reads your edit. 70% obscured = DISMISSED.",
-          },
-        ].map((s) => (
-          <div
-            key={s.step}
-            className="rounded-xl border border-[var(--border)] bg-[var(--bg-1)] p-4"
-          >
-            <span className="font-mono text-xs font-bold tracking-widest text-[var(--accent)]">
-              {s.step}
-            </span>
-            <h3
-              className="mt-1 text-sm font-bold tracking-tight text-[var(--text-1)]"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              {s.title}
-            </h3>
-            <p className="mt-1 font-mono text-xs leading-relaxed text-[var(--text-2)]">
-              {s.desc}
+          {/* Title lockup */}
+          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+            <p className="micro tracking-[0.3em] text-white/60">Vice City — Leonida — 02:14 AM</p>
+            <h1 className="gta-stencil mt-2 text-[56px] text-white sm:text-[84px]" style={{ textShadow: "0 2px 32px rgba(0,0,0,0.9), 0 0 48px rgba(255,107,53,0.25)" }}>
+              LEONIDA
+            </h1>
+            <p className="gta-stencil -mt-1 text-[22px] tracking-[0.22em] text-white/90 sm:text-[28px]">EVIDENCE LOCKER</p>
+            <p className="mt-3 max-w-[520px] text-[13px] leading-[1.7] tracking-[-0.15px] text-white/65">
+              Three surveillance photos. Two incriminating details each. Doctor the evidence before forensics closes the case — crop, redact, blur, and deceive.
             </p>
           </div>
-        ))}
-      </div>
 
-      {/* Tools */}
-      <div className="flex flex-wrap justify-center gap-2">
-        {["CROP", "DRAW", "FILTER", "STICKER", "TEXT", "SHAPES", "FRAME", "CORNERS"].map(
-          (t) => (
-            <span
-              key={t}
-              className="rounded-full border border-[var(--border)] bg-[var(--bg-1)] px-3 py-1 font-mono text-[10px] tracking-widest text-[var(--text-3)]"
-            >
-              {t}
-            </span>
-          )
-        )}
-      </div>
-    </div>
-  );
-}
-
-function EvidenceView({
-  evidence,
-  index,
-  total,
-  onOpenTerminal,
-}: {
-  evidence: (typeof EVIDENCE)[number];
-  index: number;
-  total: number;
-  onOpenTerminal: () => void;
-}) {
-  return (
-    <div className="flex flex-1 flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2
-            className="text-lg font-bold tracking-tight text-[var(--text-1)]"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            {evidence.label}
-          </h2>
-          <p className="font-mono text-xs text-[var(--text-2)]">
-            {evidence.subtitle} — {index + 1} / {total}
-          </p>
+          {/* Rockstar credit — tiny, honest */}
+          <span className="micro absolute bottom-3 right-4 hidden text-[7px] text-white/35 sm:inline">Cover: Rockstar Games — GTA VI</span>
         </div>
-        <span className="rounded-full bg-[var(--danger)]/10 px-3 py-1 font-mono text-xs font-bold text-[var(--danger)] border border-[var(--danger)]/20">
-          ● {evidence.flags.length} FLAGS
-        </span>
-      </div>
 
-      <div className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-1)]">
-        <div
-          className="pointer-events-none absolute inset-0 z-10 opacity-[0.04]"
-          style={{
-            background:
-              "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(20,240,184,1) 2px, rgba(20,240,184,1) 3px)",
-          }}
-        />
-
-        <div className="relative aspect-[16/10] w-full overflow-hidden bg-[var(--bg-2)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={evidence.imageBase64}
-            alt={evidence.label}
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute left-3 top-3 z-10 flex flex-col gap-2">
-            {evidence.flags.map((f) => (
-              <span
-                key={f}
-                className="rounded bg-[var(--danger)] px-2 py-1 font-mono text-[10px] font-bold tracking-widest text-white shadow-lg"
-              >
-                ● {f}
+        {/* CTA bar under image */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--line)] bg-[var(--paper-soft)] px-6 py-4 sm:px-7">
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { k: "Built with", v: "React Image Editor" },
+              { k: "Mode", v: "Forensic evasion" },
+              { k: "Time", v: "~3 min" },
+            ].map((s) => (
+              <span key={s.k} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1">
+                <span className="micro text-[var(--faint)]">{s.k}</span>
+                <span className="text-xs font-medium tracking-[-0.15px] text-[var(--ink)]">{s.v}</span>
               </span>
             ))}
           </div>
-          <div className="absolute bottom-3 right-3 z-10 rounded bg-black/60 px-2 py-1 font-mono text-[10px] tracking-widest text-white/80 backdrop-blur">
-            {evidence.id} — CHAIN: INTACT
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--bg-1)] px-4 py-3">
-          <span className="font-mono text-xs text-[var(--text-2)]">
-            OPEN THE TERMINAL TO TAMPER WITH THIS EVIDENCE
-          </span>
           <button
-            onClick={onOpenTerminal}
-            className="rounded-lg bg-[var(--accent)] px-5 py-2.5 font-mono text-xs font-bold tracking-widest text-[var(--bg-0)] shadow-[0_0_16px_var(--accent-glow)] transition hover:bg-[var(--accent-dim)]"
+            onClick={onEnter}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold tracking-[-0.2px] text-[var(--on-accent)] shadow-[0_2px_0_rgba(232,72,20,0.14)] transition-all hover:translate-y-[-1px] hover:bg-[var(--accent-hover)] hover:shadow-[0_5px_16px_rgba(255,107,53,0.22)] active:translate-y-0"
           >
-            OPEN FORENSICS TERMINAL →
+            Enter evidence locker
+            <span aria-hidden>→</span>
           </button>
         </div>
       </div>
 
-      <div className="flex justify-center gap-2">
-        {Array.from({ length: total }, (_, i) => (
-          <span
-            key={i}
-            className={`h-1.5 rounded-full transition-all ${i === index ? "w-8 bg-[var(--accent)]" : i < index ? "w-6 bg-[var(--accent)]/40" : "w-6 bg-[var(--bg-2)]"}`}
+      {/* How it works — 3 editorial cards */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        {[
+          {
+            n: "01",
+            title: "Evidence in",
+            desc: "A CCTV still with flagged face + plate. You know exactly what to hide.",
+            tone: "peach" as const,
+          },
+          {
+            n: "02",
+            title: "Tamper",
+            desc: "Crop, draw, filter, sticker — the editor is the weapon. No edit = busted.",
+            tone: "blue" as const,
+          },
+          {
+            n: "03",
+            title: "Beat forensics",
+            desc: "Deterministic pixel scan. 70% obscured in every flagged zone = dismissed.",
+            tone: "green" as const,
+          },
+        ].map((s) => (
+          <div key={s.n} className="group relative overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 transition-colors hover:border-[var(--line-strong)]">
+            <div className={`absolute left-0 top-0 h-1 w-full ${s.tone === "peach" ? "bg-[#f2bc95]" : s.tone === "blue" ? "bg-[#b8d4da]" : "bg-[#c8d8b8]"}`} />
+            <span className="micro text-[var(--faint)]">{s.n}</span>
+            <h3 className="mt-2 text-[17px] font-semibold tracking-[-0.4px] text-[var(--ink)]">{s.title}</h3>
+            <p className="mt-1.5 text-[13px] leading-[1.65] tracking-[-0.15px] text-[var(--muted)]">{s.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Tool chips */}
+      <div className="flex flex-wrap justify-center gap-2">
+        {["Crop", "Draw", "Filter", "Sticker", "Text", "Shapes", "Frame", "Corners"].map((t) => (
+          <span key={t} className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1 text-xs font-medium tracking-[-0.15px] text-[var(--muted)]">
+            {t}
+          </span>
+        ))}
+      </div>
+
+      {posters > 0 && (
+        <p className="text-center text-sm font-medium text-[var(--success)]">
+          {posters} / 3 dismissed — continue where you left off or play again from the nav.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── Evidence ───────────────────────────────────────────────────
+function EvidenceView({
+  evidence,
+  index,
+  total,
+  onOpen,
+}: {
+  evidence: (typeof EVIDENCE)[number];
+  index: number;
+  total: number;
+  onOpen: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="micro text-[var(--faint)]">
+            Evidence {index + 1} / {total} — Chain of custody: intact
+          </p>
+          <h2 className="mt-1 text-[22px] font-semibold tracking-[-0.6px] text-[var(--ink)]">{evidence.label}</h2>
+          <p className="mt-1 text-sm leading-[1.6] tracking-[-0.15px] text-[var(--muted)]">{evidence.subtitle}</p>
+        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--danger-line)] bg-[var(--danger-soft)] px-3 py-1.5 text-xs font-semibold tracking-[-0.15px] text-[var(--danger)]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--danger)]" />
+          {evidence.flags.length} flags
+        </span>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)]">
+        <div className="relative aspect-[16/10] overflow-hidden bg-[#0e1629]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={evidence.imageBase64} alt={evidence.label} className="h-full w-full object-cover" />
+          {/* Subtle scanline */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.035]"
+            style={{
+              background: "repeating-linear-gradient(0deg, transparent, transparent 2px, #14F0B8 2px, #14F0B8 3px)",
+            }}
           />
+          <div className="absolute left-3 top-3 flex flex-col gap-1.5">
+            {evidence.flags.map((f) => (
+              <span key={f} className="inline-flex items-center gap-1.5 rounded-full bg-[var(--danger)] px-2.5 py-1 text-[10px] font-bold tracking-widest text-white shadow-lg">
+                <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                {f}
+              </span>
+            ))}
+          </div>
+          <div className="absolute bottom-3 right-3 rounded-full bg-black/55 px-2.5 py-1 text-[10px] tracking-widest text-white/80 backdrop-blur">
+            {evidence.id} — REC 02:14:33
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] bg-[var(--paper-soft)] px-4 py-3 sm:px-5">
+          <span className="micro text-[var(--faint)]">Open the terminal to tamper with this evidence</span>
+          <button onClick={onOpen} className="rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold tracking-[-0.2px] text-[var(--on-accent)] shadow-[0_2px_0_rgba(232,72,20,0.12)] transition-all hover:translate-y-[-1px] hover:bg-[var(--accent-hover)] active:translate-y-0">
+            Open forensics terminal →
+          </button>
+        </div>
+      </div>
+
+      <div className="flex justify-center gap-1.5">
+        {Array.from({ length: total }, (_, i) => (
+          <span key={i} className={`h-1.5 rounded-full transition-all ${i === index ? "w-8 bg-[var(--accent)]" : i < index ? "w-5 bg-[var(--accent)]/35" : "w-5 bg-[var(--line)]"}`} />
         ))}
       </div>
     </div>
   );
 }
 
-function EvidencePreview({
-  evidence,
-  editedDataUrl,
-}: {
-  evidence: (typeof EVIDENCE)[number];
-  editedDataUrl: string | null;
-}) {
+function EvidencePreview({ evidence, editedUrl }: { evidence: (typeof EVIDENCE)[number]; editedUrl: string | null }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-1)]">
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-[var(--bg-2)]">
+    <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)]">
+      <div className="relative aspect-[16/10] overflow-hidden bg-[#0e1629]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={editedDataUrl ?? evidence.imageBase64}
-          alt="Edited evidence"
-          className="h-full w-full object-cover"
-        />
-        <div className="absolute bottom-3 left-3 rounded bg-black/60 px-2 py-1 font-mono text-[10px] tracking-widest text-white/80 backdrop-blur">
-          {editedDataUrl ? "EDITED — SUBMITTED TO FORENSICS" : evidence.id}
-        </div>
+        <img src={editedUrl ?? evidence.imageBase64} alt="Edited evidence" className="h-full w-full object-cover" />
+      </div>
+      <div className="border-t border-[var(--line)] bg-[var(--paper-soft)] px-4 py-2.5">
+        <span className="micro text-[var(--faint)]">{editedUrl ? "Edited — submitted to forensics" : evidence.id} — awaiting verdict</span>
       </div>
     </div>
   );
 }
 
-function PosterCard({
-  posterUrl,
-  caseLabel,
-}: {
-  posterUrl: string;
-  caseLabel: string;
-}) {
+function PosterCard({ posterUrl, caseLabel }: { posterUrl: string; caseLabel: string }) {
   return (
-    <div className="rounded-xl border border-[var(--accent)]/20 bg-[var(--bg-1)] p-4">
+    <div className="rounded-2xl border border-[var(--success-line)] bg-[var(--surface)] p-4 shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between">
-        <h3
-          className="text-sm font-bold tracking-tight text-[var(--text-1)]"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          POSTER — {caseLabel}
-        </h3>
-        <span className="rounded bg-[var(--accent)]/15 px-2 py-1 font-mono text-[10px] font-bold tracking-widest text-[var(--accent)]">
-          1080 × 1350
-        </span>
+        <h3 className="text-sm font-semibold tracking-[-0.3px] text-[var(--ink)]">Poster — {caseLabel}</h3>
+        <span className="rounded-full bg-[var(--success-soft)] px-2.5 py-1 text-[10px] font-bold tracking-widest text-[var(--success)]">1080 × 1350</span>
       </div>
-      <div className="mt-3 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-0)]">
+      <div className="mt-3 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--paper)]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={posterUrl}
-          alt={`Poster for ${caseLabel}`}
-          className="mx-auto max-h-[520px] w-auto object-contain"
-        />
+        <img src={posterUrl} alt={`Poster for ${caseLabel}`} className="mx-auto max-h-[520px] w-auto object-contain" />
       </div>
       <div className="mt-3 flex gap-2">
-        <a
-          href={posterUrl}
-          download={`leonida-${caseLabel.toLowerCase()}-poster.png`}
-          className="flex-1 rounded-lg bg-[var(--accent)] py-2.5 text-center font-mono text-xs font-bold tracking-widest text-[var(--bg-0)] hover:bg-[var(--accent-dim)]"
-        >
-          DOWNLOAD POSTER
+        <a href={posterUrl} download={`leonida-${caseLabel.toLowerCase()}-poster.png`} className="flex flex-1 items-center justify-center rounded-full bg-[var(--accent)] py-3 text-center text-sm font-semibold tracking-[-0.2px] text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-hover)]">
+          Download poster
         </a>
         <button
           onClick={async () => {
-            const blob = await (await fetch(posterUrl)).blob();
-            const file = new File([blob], `leonida-${caseLabel}.png`, {
-              type: "image/png",
-            });
-            if (navigator.canShare?.({ files: [file] })) {
-              await navigator.share({
-                files: [file],
-                title: `LEONIDA — ${caseLabel} DISMISSED`,
-                text: "Doctor the evidence. Beat the system. #BuiltWithImageEditor @unlayer",
-              });
-            } else if (navigator.clipboard) {
-              // Fallback: copy data URL hint
+            try {
+              const blob = await (await fetch(posterUrl)).blob();
+              const file = new File([blob], `leonida-${caseLabel}.png`, { type: "image/png" });
+              if (navigator.canShare?.({ files: [file] })) {
+                await navigator.share({
+                  files: [file],
+                  title: `LEONIDA — ${caseLabel} dismissed`,
+                  text: "Doctor the evidence. Beat the system. #BuiltWithImageEditor @unlayer",
+                });
+                return;
+              }
+            } catch {}
+            try {
               await navigator.clipboard.writeText(window.location.href);
-            }
+            } catch {}
           }}
-          className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--bg-2)] py-2.5 text-center font-mono text-xs font-bold tracking-widest text-[var(--text-1)] hover:bg-[var(--bg-3)]"
+          className="flex-1 rounded-full border border-[var(--line)] bg-[var(--surface)] py-3 text-center text-sm font-semibold tracking-[-0.2px] text-[var(--ink)] transition-colors hover:border-[var(--line-strong)]"
         >
-          SHARE
+          Share
         </button>
       </div>
-      <p className="mt-2 text-center font-mono text-[10px] tracking-widest text-[var(--text-3)]">
-        Share with #BuiltWithImageEditor + @unlayer
-      </p>
+      <p className="micro mt-2 text-center text-[var(--faint)]">Share with #BuiltWithImageEditor + @unlayer</p>
     </div>
   );
 }
 
-function CompleteView({
-  posters,
-  onRestart,
-}: {
-  posters: string[];
-  onRestart: () => void;
-}) {
-  const allDismissed = posters.length === EVIDENCE.length;
-
+function Complete({ posters, onRestart }: { posters: string[]; onRestart: () => void }) {
+  const allDone = posters.length === EVIDENCE.length;
   return (
-    <div className="flex flex-1 flex-col items-center gap-6 py-6 text-center">
-      <div
-        className={`rounded-full px-4 py-1.5 font-mono text-xs font-bold tracking-widest ${allDismissed ? "bg-[var(--accent)] text-[var(--bg-0)]" : "bg-[var(--warning)] text-[var(--bg-0)]"}`}
-      >
-        {allDismissed ? "★ ALL CASES DISMISSED — WANTED LEVEL CLEARED ★" : `CASE FILE CLOSED — ${posters.length} / ${EVIDENCE.length} DISMISSED`}
+    <div className="flex flex-1 flex-col items-center gap-6 py-8 text-center">
+      <div className={`rounded-full px-4 py-2 text-xs font-semibold tracking-[-0.2px] ${allDone ? "bg-[var(--success)] text-[#042a1e]" : "bg-[var(--warning)] text-[#1a1300]"}`}>
+        {allDone ? "★ All cases dismissed — wanted level cleared ★" : `Case file closed — ${posters.length} / ${EVIDENCE.length} dismissed`}
       </div>
-
-      <h2
-        className="text-3xl font-black tracking-tight text-[var(--text-1)]"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        {allDismissed ? "YOU GOT AWAY WITH IT" : "CASE FILE CLOSED"}
-      </h2>
-
-      <p className="max-w-md font-mono text-xs leading-relaxed text-[var(--text-2)]">
-        {allDismissed
-          ? "Forensics failed on every piece of evidence. The posters are yours."
-          : "Some evidence still matched. Retry the busted cases or take what you earned."}
+      <h2 className="display text-[32px] text-[var(--ink)] sm:text-[40px]">{allDone ? "You got away with it." : "Case file closed."}</h2>
+      <p className="max-w-md text-sm leading-[1.65] tracking-[-0.15px] text-[var(--muted)]">
+        {allDone ? "Forensics failed on every piece of evidence. The posters are yours." : "Some evidence still matched. Retry the busted cases or take what you earned."}
       </p>
-
       {posters.length > 0 ? (
         <div className="grid w-full gap-4 sm:grid-cols-3">
           {posters.map((url, i) => (
-            <div
-              key={i}
-              className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-1)]"
-            >
+            <div key={i} className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={url}
-                alt={`Poster ${i + 1}`}
-                className="h-auto w-full object-contain"
-              />
-              <div className="border-t border-[var(--border)] p-2">
-                <a
-                  href={url}
-                  download={`leonida-poster-${i + 1}.png`}
-                  className="block rounded bg-[var(--accent)] py-2 text-center font-mono text-xs font-bold tracking-widest text-[var(--bg-0)] hover:bg-[var(--accent-dim)]"
-                >
-                  DOWNLOAD
+              <img src={url} alt={`Poster ${i + 1}`} className="h-auto w-full object-contain" />
+              <div className="border-t border-[var(--line)] p-2.5">
+                <a href={url} download={`leonida-poster-${i + 1}.png`} className="block rounded-full bg-[var(--accent)] py-2.5 text-center text-sm font-semibold tracking-[-0.2px] text-[var(--on-accent)] hover:bg-[var(--accent-hover)]">
+                  Download
                 </a>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <p className="font-mono text-xs text-[var(--text-3)]">
-          No posters yet — dismiss at least one case.
-        </p>
+        <p className="text-sm text-[var(--faint)]">No posters yet — dismiss at least one case.</p>
       )}
-
-      <div className="flex gap-3">
-        <button
-          onClick={onRestart}
-          className="rounded-lg border border-[var(--border)] bg-[var(--bg-1)] px-6 py-2.5 font-mono text-xs font-bold tracking-widest text-[var(--text-1)] hover:bg-[var(--bg-2)]"
-        >
-          PLAY AGAIN
+      <div className="flex flex-wrap justify-center gap-3">
+        <button onClick={onRestart} className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-6 py-3 text-sm font-semibold tracking-[-0.2px] text-[var(--ink)] hover:border-[var(--line-strong)]">
+          Play again
         </button>
-        <a
-          href="https://github.com/JUICEWRLD998/leonida"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-lg bg-[var(--bg-2)] px-6 py-2.5 font-mono text-xs font-bold tracking-widest text-[var(--text-1)] hover:bg-[var(--bg-3)]"
-        >
-          VIEW ON GITHUB →
+        <a href="https://github.com/JUICEWRLD998/leonida" target="_blank" rel="noopener noreferrer" className="rounded-full bg-[var(--surface)] px-6 py-3 text-sm font-semibold tracking-[-0.2px] text-[var(--ink)] ring-1 ring-[var(--line)] hover:bg-[var(--surface-raised)]">
+          View on GitHub →
         </a>
       </div>
     </div>
