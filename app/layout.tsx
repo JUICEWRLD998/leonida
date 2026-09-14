@@ -1,25 +1,5 @@
 import type { Metadata } from "next";
-import { Anton, JetBrains_Mono, Inter } from "next/font/google";
 import "./globals.css";
-
-const anton = Anton({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const jetMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  display: "swap",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-body",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "LEONIDA — Evidence Locker",
@@ -30,6 +10,7 @@ export const metadata: Metadata = {
     description:
       "Doctor the evidence. Beat the system. A GTA VI-inspired forensic terminal.",
     type: "website",
+    images: [{ url: "/gta6-cover.jpg", width: 1200, height: 630 }],
   },
 };
 
@@ -39,11 +20,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${anton.variable} ${jetMono.variable} ${inter.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className="h-full antialiased">
+      <body className="min-h-full flex flex-col bg-[var(--paper)] text-[var(--ink)]">
+        {children}
+      </body>
     </html>
   );
 }
