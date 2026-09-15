@@ -150,7 +150,7 @@ export default function Home() {
           onJump={(i) => setState((s) => ({ ...s, evidenceIndex: i, phase: "evidence" }))}
         />
 
-        <main className="min-w-0 pb-14 lg:pb-0">
+        <main className="min-w-0 pt-5 pb-14 lg:pt-0 lg:pb-0">
           <AnimatePresence mode="wait" initial={false}>
             {state.phase === "landing" && (
               <Phase key="landing">
@@ -352,12 +352,49 @@ function DocketRail({
   const live = phase !== "landing" && phase !== "complete";
 
   return (
-    <aside className="border-b border-[var(--desk-edge)] lg:sticky lg:top-[73px] lg:self-start lg:border-b-0 lg:pt-8">
-      <p className="field px-3 pt-4 text-[var(--on-desk-faint)] lg:pt-0">
+    <aside className="border-b border-[var(--desk-edge)] pb-1 lg:sticky lg:top-[73px] lg:self-start lg:border-b-0 lg:pt-8 lg:pb-0">
+      <p className="field px-3 pt-3 text-[var(--on-desk-faint)] lg:pt-0">
         Docket — exhibits filed
       </p>
 
-      <div className="mt-2 flex gap-0 overflow-x-auto lg:block lg:overflow-visible">
+      {/* Phone: a compact strip of case references. The full entries need a
+          column, and spending the viewport on them buries the work. */}
+      <div className="mt-2 flex gap-1.5 overflow-x-auto px-3 lg:hidden">
+        {EVIDENCE.map((ev, i) => {
+          const done = cleared > i;
+          const active = live && index === i;
+          const { court } = splitLabel(ev.label, ev.id);
+          return (
+            <button
+              key={ev.id}
+              type="button"
+              onClick={() => onJump(i)}
+              aria-current={active ? "true" : undefined}
+              className={`flex shrink-0 items-baseline gap-2 border px-2.5 py-2 ${
+                active
+                  ? "border-[var(--folder-deep)] bg-[var(--folder)]/12"
+                  : "border-[var(--desk-edge)]"
+              }`}
+            >
+              <span className="field text-[var(--on-desk)]">{court}</span>
+              <span
+                className="field"
+                style={{
+                  color: done
+                    ? "var(--clear-ink)"
+                    : active
+                      ? "var(--folder)"
+                      : "var(--on-desk-faint)",
+                }}
+              >
+                {done ? "Clrd" : active ? "Open" : "Pend"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-2 hidden lg:block">
         {EVIDENCE.map((ev, i) => {
           const done = cleared > i;
           const active = live && index === i;
@@ -367,7 +404,7 @@ function DocketRail({
               key={ev.id}
               type="button"
               onClick={() => onJump(i)}
-              className={`docket shrink-0 lg:w-full ${active ? "docket-active" : ""}`}
+              className={`docket w-full ${active ? "docket-active" : ""}`}
               aria-current={active ? "true" : undefined}
             >
               <span className="field w-[52px] shrink-0 text-[var(--on-desk-faint)]">
