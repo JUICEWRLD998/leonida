@@ -305,7 +305,7 @@ function Letterhead({ onRestart, cleared }: { onRestart: () => void; cleared: nu
             <span className="field text-[var(--on-desk-faint)]">Cleared</span>
             <span
               className={`ledger text-[15px] ${
-                cleared === EVIDENCE.length ? "text-[var(--clear)]" : "text-[var(--on-desk)]"
+                cleared === EVIDENCE.length ? "text-[var(--clear-ink)]" : "text-[var(--on-desk)]"
               }`}
             >
               {cleared}/{EVIDENCE.length}
@@ -375,15 +375,15 @@ function DocketRail({
               </span>
               <span className="min-w-0 flex-1">
                 <span
-                  className={`block truncate text-[13px] ${
+                  className={`block truncate text-[14px] ${
                     active ? "text-[var(--on-desk)]" : "text-[var(--on-desk-muted)]"
                   }`}
                 >
                   {name}
                 </span>
-                <span className="mt-0.5 flex flex-wrap gap-x-2">
+                <span className="mt-1 flex flex-col gap-0.5">
                   {ev.flags.map((f) => (
-                    <span key={f} className="field text-[var(--stamp)]">
+                    <span key={f} className="field text-[var(--stamp-ink)]">
                       {f.replace(" DETECTED", "")}
                     </span>
                   ))}
@@ -393,7 +393,7 @@ function DocketRail({
                 className="field shrink-0"
                 style={{
                   color: done
-                    ? "var(--clear)"
+                    ? "var(--clear-ink)"
                     : active
                       ? "var(--folder)"
                       : "var(--on-desk-faint)",
@@ -468,7 +468,7 @@ function CaseFile({
                   {k}
                 </span>
                 <span className="rule" style={{ borderColor: "var(--folder-line)" }} />
-                <span className="text-[13px] font-bold text-[var(--desk)]">{v}</span>
+                <span className="text-[14px] font-bold text-[var(--desk)]">{v}</span>
               </div>
             ))}
           </div>
@@ -494,17 +494,17 @@ function CaseFile({
           </div>
         </div>
 
-        {/* Scene photo, taped to the file */}
+        {/* The first exhibit, taped to the file as the scene photo */}
         <div className="relative">
-          <div className="relative rotate-[1.4deg] border border-[var(--folder-deep)] bg-[var(--exhibit)] p-2 shadow-[0_18px_40px_rgba(0,0,0,0.5)]">
+          <div className="mount relative rotate-[1.4deg] shadow-[0_18px_40px_rgba(0,0,0,0.5)]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/gta6-cover.jpg"
-              alt="Scene photograph, Leonida, 02:14"
+              src={EVIDENCE[0].imageBase64}
+              alt={`Scene photograph — ${EVIDENCE[0].subtitle}`}
               className="block h-auto w-full"
             />
-            <p className="pt-2 pb-0.5 text-center text-[10px] tracking-[0.14em] text-[#7d7a72] uppercase">
-              Scene photo — Leonida, 02:14
+            <p className="field pt-2.5 pb-0.5 text-center text-[var(--on-desk-faint)]">
+              Scene photo — exhibit 06-A
             </p>
           </div>
 
@@ -529,7 +529,7 @@ function CaseFile({
             "Alter it — frame, mark, annotate or redact over the flagged zones.",
             "Submit. Forensics needs 70% of every flagged zone obscured.",
           ].map((step, i) => (
-            <li key={step} className="flex gap-3 text-[13px] leading-[1.6] text-[var(--desk)]">
+            <li key={step} className="flex gap-3 text-[14px] leading-[1.6] text-[var(--desk)]">
               <span className="ledger shrink-0 text-[var(--folder-ink)]">
                 {i + 1}.
               </span>
@@ -566,13 +566,13 @@ function ExhibitFolder({
           <h2 className="stamp-type mt-2 text-[30px] text-[var(--folder)] sm:text-[40px]">
             {name}
           </h2>
-          <p className="mt-2 max-w-[56ch] text-[13px] text-[var(--on-desk-muted)]">
+          <p className="mt-2 max-w-[56ch] text-[14px] text-[var(--on-desk-muted)]">
             {evidence.subtitle}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
           <span className="field text-[var(--on-desk-faint)]">Flags on this still</span>
-          <span className="stamp stamp-red rotate-[-3deg] text-[13px]">
+          <span className="stamp stamp-red rotate-[-3deg] text-[14px]">
             {evidence.flags.length} flagged
           </span>
         </div>
@@ -580,7 +580,7 @@ function ExhibitFolder({
 
       <div className="folder folder-tab pt-9">
         <div className="p-4 sm:p-6">
-          <div className="relative border border-[var(--folder-deep)] bg-[var(--exhibit)] p-2.5">
+          <div className="mount relative">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={evidence.imageBase64}
@@ -603,7 +603,7 @@ function ExhibitFolder({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="max-w-[46ch] text-[12.5px] text-[var(--folder-ink)]">
+            <p className="max-w-[46ch] text-[13.5px] text-[var(--folder-ink)]">
               Open the forensics terminal to mount and alter this exhibit.
             </p>
             <button onClick={onOpen} className="btn btn-solid" type="button">
@@ -660,7 +660,7 @@ function RedactionSweep({
 
       <div className="folder folder-tab pt-9">
         <div className="p-4 sm:p-6">
-          <div className="relative overflow-hidden border border-[var(--folder-deep)] bg-[var(--exhibit)] p-2.5">
+          <div className="mount relative overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={editedUrl ?? evidence.imageBase64}
@@ -706,7 +706,7 @@ function RedactionSweep({
                   transition={{ duration: 0.4, delay: 0.5 + i * 0.45 }}
                 >
                   <span className="field text-[var(--folder-ink)]">›</span>
-                  <span className="text-[12.5px] text-[var(--desk)]">{label}</span>
+                  <span className="text-[13.5px] text-[var(--desk)]">{label}</span>
                 </motion.div>
               )
             )}
@@ -720,9 +720,9 @@ function RedactionSweep({
 // ── Poster sheet ───────────────────────────────────────────────
 function PosterSheet({ posterUrl, caseId }: { posterUrl: string; caseId: string }) {
   return (
-    <div className="border border-[var(--clear)] bg-[var(--desk-deep)]">
-      <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--clear)] px-4 py-3">
-        <span className="field text-[var(--clear)]">Dismissal notice issued</span>
+    <div className="border border-[var(--clear-ink)] bg-[var(--desk-deep)]">
+      <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--clear-ink)] px-4 py-3">
+        <span className="field text-[var(--clear-ink)]">Dismissal notice issued</span>
         <span className="ledger text-[12px] text-[var(--on-desk-muted)]">
           1080 × 1350
         </span>
@@ -840,7 +840,7 @@ function CaseClosed({
         </div>
       ) : (
         <div className="border border-dashed border-[var(--desk-edge)] px-5 py-8">
-          <p className="text-[13px] text-[var(--on-desk-muted)]">
+          <p className="text-[14px] text-[var(--on-desk-muted)]">
             No dismissal notices yet. Alter an exhibit and submit it to forensics.
           </p>
         </div>

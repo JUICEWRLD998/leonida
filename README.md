@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LEONIDA-06 — EVIDENCE LOCKER
 
-## Getting Started
+**Alter the exhibits until forensics can't match them, and get the case thrown out.**
 
-First, run the development server:
+Built for the **#BuiltWithImageEditor** challenge. A GTA VI–inspired game where the
+React Image Editor isn't decoration — it's the weapon.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## What this actually is
+
+Most entries built with an image editor ask you to **make** something: a poster, a
+meme, a cover. This one asks you to **destroy** something. You're a clerk in the
+Leonida Police Department property room, and three exhibits are about to send
+someone away. Your job is to make sure they don't survive forensic analysis.
+
+Each exhibit carries a flagged face and a flagged plate. Forensics re-reads those
+two regions on whatever you submit. If both still read, you're caught.
+
+- Obscure **70% of every flagged region** and the case gets thrown out.
+- Submit the exhibit untouched and you're caught immediately.
+- Every edit is permanent — you submit once, then live with it.
+
+## The loop
+
+```
+  collect              tamper               submit            verdict
+┌───────────┐      ┌──────────────┐     ┌───────────┐     ┌───────────┐
+│  exhibit  │  →   │  forensics   │  →  │  forensic │  →  │ DISMISSED │
+│  folder   │      │  terminal    │     │   sweep   │     │  / BUSTED │
+│ face+plate│      │ (the editor) │     │  reads    │     │  + poster │
+│  flagged  │      │  8 tools     │     │  pixels   │     │           │
+└───────────┘      └──────────────┘     └───────────┘     └───────────┘
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Win and you get a **dismissal notice** — a 1080×1350 poster stamped `DISMISSED`,
+generated from your own altered exhibit.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How forensics actually decides
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+No API, no model, no randomness. `lib/scorer.ts` compares the pixels you submitted
+against the exhibit as filed, inside each flagged region, and counts a pixel as
+obscured when any channel moves by more than 30.
 
-## Learn More
+Cropping is handled honestly. The submitted frame is placed inside the original
+frame preserving aspect, and whatever your edit no longer covers is recorded as
+**removed** — so cropping a region out of frame counts as obscuring it, while a
+plain resize earns no free pass. That distinction is the difference between a
+scorer a judge can trust and one that can be gamed by zooming.
 
-To learn more about Next.js, take a look at the following resources:
+The scoring logic is pure functions over plain arrays, so it's tested without a
+browser: run `node --experimental-strip-types scorer.test.mjs` for 18 checks
+covering region mapping, frame placement, the diff threshold, and crop handling.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## The React Image Editor is load-bearing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Remove it and there is no game. What it drives:
 
-## Deploy on Vercel
+| Editor API | Role in the game |
+|---|---|
+| `image` (data URL) | The exhibit loaded for tampering |
+| `onSave({ dataUrl, blob })` | The submit trigger — this is what gets scored |
+| `hasChanges()` | Polled live; the terminal reads "Altered" or "Unchanged" |
+| `onLoadError` / `onError` | Distinguishes a dead exhibit from a dead terminal |
+| `reset()` / remount | Moving between exhibits, and recovering a failed mount |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Every tool the editor exposes is a tampering method. Lose one and you lose an
+option.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## The design
+
+The subject is paperwork fraud, so the interface is a property room rather than a
+glowing terminal — manila folders, typed exhibit tags, chain-of-custody forms,
+redaction tape, rubber stamps. Courier Prime carries what should look *typed*;
+Archivo carries what should be *read*; Archivo Black is the stamp, used large and
+rarely. Neon appears as signage only, never as chrome.
+
+Two deliberate constraints: colour pairs were held to WCAG AA (verified
+numerically, not by eye), and every animation respects `prefers-reduced-motion`.
+
+## Run it
+
+```bash
+npm install
+npm run dev        # http://localhost:3000
+```
+
+```bash
+npm run build && npm run start   # production smoke test
+node --experimental-strip-types scorer.test.mjs   # scoring logic
+```
+
+## Stack
+
+Next.js 16 (App Router) · React 19 · `@unlayer/react-image-editor` (client-only,
+`ssr: false`) · Framer Motion · Tailwind v4 with a CSS custom-property token layer.
+
+## Known limits
+
+Stated plainly, because they affect what you'll see:
+
+- **The editor loads its runtime from `cdn.unlayer.com`.** It needs network access
+  on first load. True offline operation requires an encrypted licence we don't have,
+  so "works with no WiFi" is not a claim this build earns.
+- **The exhibits are drawn SVG stills, not photographs.** They're built to read as
+  degraded CCTV — grain, interference bands, lens falloff, a sync tear — and they
+  score deterministically, but they are illustrations.
+- **`gta-pic.jpg` is unused.** `gta6-cover.jpg` (Key art © Rockstar Games) sits
+  behind the interface at low opacity. A work of fan fiction, not affiliated with
+  Rockstar Games.

@@ -1,13 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Courier_Prime, Archivo_Black } from "next/font/google";
+import { Courier_Prime, Archivo_Black, Archivo } from "next/font/google";
 import "./globals.css";
 
-// Everything in a property room is typed on a Courier. This is the file's voice.
-const courier = Courier_Prime({
+/* Reading copy is read, not decoded. A humanist sans with a tall x-height and
+   a real weight range stays clear at small sizes on a dark ground; typewriter
+   Courier has thin strokes and a small x-height, so a full screen of it reads
+   as grey mush. Courier is kept for what should look typed: form fields and
+   numerals. */
+const archivo = Archivo({
   subsets: ["latin"],
-  weight: ["400", "700"],
-  style: ["normal", "italic"],
-  variable: "--font-courier",
+  weight: ["400", "500", "600"],
+  variable: "--font-archivo",
   display: "swap",
 });
 
@@ -16,6 +19,15 @@ const archivoBlack = Archivo_Black({
   subsets: ["latin"],
   weight: ["400"],
   variable: "--font-archivo-black",
+  display: "swap",
+});
+
+// The typewriter voice: form fields, exhibit tags, ledger numerals.
+const courier = Courier_Prime({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-courier",
   display: "swap",
 });
 

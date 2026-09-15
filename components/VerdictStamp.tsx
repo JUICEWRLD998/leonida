@@ -21,7 +21,7 @@ export function VerdictStamp({ verdict, onNext, onRetry, isLast }: Props) {
       <div className="flex w-full flex-wrap items-center justify-between gap-4">
         <div>
           <p className="field text-[var(--on-desk-faint)]">Forensics disposition</p>
-          <p className="mt-1.5 text-[13px] text-[var(--on-desk-muted)]">
+          <p className="mt-1.5 text-[14px] text-[var(--on-desk-muted)]">
             {ok
               ? "No flagged region survived analysis. The evidence cannot be used."
               : "At least one flagged region is still legible to forensics."}

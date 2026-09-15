@@ -35,7 +35,7 @@ function Mounting({ label, failed }: { label: string; failed?: boolean }) {
     <div className="flex h-[520px] items-center justify-center border border-[var(--desk-edge)] bg-[var(--desk-deep)]">
       <p
         className="field"
-        style={{ color: failed ? "var(--stamp)" : "var(--on-desk-muted)" }}
+        style={{ color: failed ? "var(--stamp-ink)" : "var(--on-desk-muted)" }}
       >
         {label}
         {!failed && <span className="caret">_</span>}
@@ -129,9 +129,9 @@ export function ForensicsTerminal({ image, onSubmit, onError, onCancel }: Props)
             className="field"
             style={{
               color: loadFailed
-                ? "var(--stamp)"
+                ? "var(--stamp-ink)"
                 : ready
-                  ? "var(--clear)"
+                  ? "var(--clear-ink)"
                   : "var(--folder)",
             }}
           >
@@ -178,8 +178,8 @@ export function ForensicsTerminal({ image, onSubmit, onError, onCancel }: Props)
       </div>
 
       {loadFailed && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border border-[var(--stamp)] bg-[var(--stamp-wash)] px-4 py-3">
-          <p className="text-[13px] text-[var(--stamp)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border border-[var(--stamp-ink)] bg-[var(--stamp-wash)] px-4 py-3">
+          <p className="text-[14px] text-[var(--stamp-ink)]">
             The exhibit could not be mounted. Try again, or leave the terminal and
             reopen this exhibit.
           </p>
@@ -189,7 +189,7 @@ export function ForensicsTerminal({ image, onSubmit, onError, onCancel }: Props)
         </div>
       )}
 
-      <p className="text-[12.5px] leading-[1.7] text-[var(--on-desk-muted)]">
+      <p className="text-[13.5px] leading-[1.7] text-[var(--on-desk-muted)]">
         {ready
           ? "Alter the exhibit so the flagged zones can no longer be read, then save inside the editor to submit it to forensics."
           : loadFailed

@@ -69,7 +69,7 @@ export function ScanReport({
       </div>
 
       <div className="border-t border-[var(--form-line)] px-4 py-3 sm:px-5">
-        <p className="text-[12.5px] leading-[1.7] text-[var(--form-muted)]">
+        <p className="text-[13.5px] leading-[1.7] text-[var(--form-muted)]">
           {score.untouched
             ? "No tampering detected. The exhibit was submitted exactly as filed, so every flagged zone still reads."
             : ok
@@ -77,7 +77,7 @@ export function ScanReport({
               : "Zones marked Matched remain legible. Obscure them further before resubmitting."}
         </p>
         {score.frameAltered && (
-          <p className="mt-2 text-[12.5px] leading-[1.7] text-[var(--form-muted)]">
+          <p className="mt-2 text-[13.5px] leading-[1.7] text-[var(--form-muted)]">
             The submitted frame does not match the filed dimensions. Areas the
             frame no longer reaches are recorded as removed.
           </p>
