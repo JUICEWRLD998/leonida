@@ -21,8 +21,36 @@ export type Evidence = {
   difficulty: 1 | 2 | 3;
 };
 
+/* An exhibit is a developed surveillance still: cold silver-grey, sitting in
+   the warm manila it is filed in. The scene geometry below is fixed; this maps
+   the original blue-screen palette onto the paper-room system in one place.
+   Flag red and plate amber are deliberately left alone — they are the marks
+   forensics put on the print, and they should read against cold stock. */
+const COLD: Record<string, string> = {
+  "#0E1629": "#141416", // ground
+  "#070B14": "#0D0D0F", // deep ground
+  "#162040": "#1E1E21", // panel fill
+  "#1A2744": "#212125",
+  "#2A3A5A": "#2A2A2E",
+  "#1E2D5A": "#33333A", // structure line
+  "#4A5A7A": "#5C5C63", // muted type
+  "#8A9AB8": "#6F6F77", // secondary type
+  "#E8EEF8": "#E6E4DE", // highlight
+  "#F0EDE4": "#F0EEE8",
+  "#C9B89A": "#B8B0A2", // skin
+  "#8A7A60": "#6E675C",
+  "#4A3A2A": "#3A3630",
+  "#4A2A00": "#1A1400", // type on the plate
+  "#4A3A00": "#1A1400",
+  "#14F0B8": "#9AA0A8", // scanlines and brackets: desaturated off the old teal
+};
+
+function recolor(svg: string): string {
+  return svg.replace(/#[0-9A-Fa-f]{6}/g, (hex) => COLD[hex.toUpperCase()] ?? hex);
+}
+
 function svgDataUrl(svg: string): string {
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(recolor(svg))}`;
 }
 
 function cctvSvg(opts: {

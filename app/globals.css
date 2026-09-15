@@ -1,69 +1,84 @@
 @import "tailwindcss";
 
 /*
-  LEONIDA — Editorial forensic terminal
-  Palette: warm paper base + deep Leonida ink + Vice sunset + GTA VI cover warmth
-  Type: DM Sans Variable (weight 550 signature) + DM Mono
-  Shadows: warm-tinted, never neutral black
+  LEONIDA PD — PROPERTY & EVIDENCE
+  Case 06 / Evidence Locker
+
+  The work here is paperwork fraud: an exhibit is altered so a case gets
+  thrown out. So the interface is property-room material, not a glowing
+  computer — manila stock, typed exhibit tags, chain-of-custody forms,
+  redaction tape, rubber stamps.
+
+  Type is the voice of the file: Courier Prime (the typewriter everything
+  in a property room is actually typed on) against Archivo Black, used
+  large and rarely, as the stamp.
+
+  Boldness is spent in exactly one place: the redaction. Bars wipe over
+  content. Stamps land with weight. Everything else stays hairline-quiet.
 */
 
 :root {
-  /* Surfaces */
-  --paper: #0c0a14;
-  --paper-soft: #14121f;
-  --surface: #1a1628;
-  --surface-raised: #221e33;
-  --ink: #f2ede6;
-  --muted: #9a96ab;
-  --faint: #6b6880;
-  --line: #2a2640;
-  --line-strong: #3a3458;
+  /* ── The desk ── */
+  --desk: #1c1915;
+  --desk-deep: #14110d;
+  --desk-edge: #30281e;
 
-  /* Accent — Vice sunset amber (one accent, spent once per screen) */
-  --accent: #ff6b35;
-  --accent-hover: #ff8458;
-  --accent-deep: #e0501a;
-  --on-accent: #1a0a00;
+  /* ── Manila folder ── */
+  --folder: #c9a96a;
+  --folder-lit: #dcc088;
+  --folder-deep: #a8874a;
+  --folder-ink: #6b5528;
+  --folder-line: #8f7439;
 
-  /* Success — case dismissed teal (used only for verdict) */
-  --success: #14f0b8;
-  --success-soft: rgba(20, 240, 184, 0.12);
-  --success-line: rgba(20, 240, 184, 0.22);
+  /* ── Case-file paper (forms are ink on paper, not white on black) ── */
+  --form: #e9e0cb;
+  --form-deep: #d8cbb0;
+  --form-line: #b9a884;
+  --form-ink: #2a2620;
+  --form-muted: #6a6153;
 
-  /* Danger */
-  --danger: #ff3b4a;
-  --danger-soft: rgba(255, 59, 74, 0.12);
-  --danger-line: rgba(255, 59, 74, 0.25);
+  /* ── The exhibit itself: a developed surveillance still. Cold, against warm paper. ── */
+  --exhibit: #0a0c0e;
 
-  /* Warning */
-  --warning: #ffcc02;
+  /* ── Stamps ── */
+  --stamp: #a33220;
+  --stamp-wash: rgba(163, 50, 32, 0.12);
+  --clear: #1f6b45;
+  --clear-wash: rgba(31, 107, 69, 0.12);
+  --hold: #8a6d1f;
 
-  /* Radii — stepped */
-  --r-xs: 5px;
-  --r-sm: 7px;
-  --r-md: 10px;
-  --r-lg: 13px;
-  --r-xl: 20px;
-  --r-2xl: 28px;
-  --r-hero: 32px;
-  --r-pill: 999px;
+  /* ── Redaction tape: the darkest thing on screen, deliberately ── */
+  --tape: #0b0906;
 
-  /* Shadows — warm-tinted */
-  --shadow-card: 0 8px 32px rgba(10, 6, 20, 0.5);
-  --shadow-raised: 0 16px 48px rgba(10, 6, 20, 0.6);
-  --shadow-glow: 0 0 32px rgba(255, 107, 53, 0.18);
-  --shadow-success-glow: 0 0 32px rgba(20, 240, 184, 0.18);
+  /* ── Legibility on the desk ── */
+  --on-desk: #ded4c2;
+  --on-desk-muted: #9a8f7c;
+  --on-desk-faint: #6d6455;
 
-  /* Motion */
-  --ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --t-fast: 0.15s;
-  --t-med: 0.22s;
+  /* ── Geometry: paper is square. Nothing in a property room is a pill. ── */
+  --r: 1px;
+
+  /* ── Motion ── */
+  --ease-paper: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @theme inline {
-  --color-background: var(--paper);
-  --color-foreground: var(--ink);
+  --color-desk: var(--desk);
+  --color-desk-deep: var(--desk-deep);
+  --color-folder: var(--folder);
+  --color-folder-deep: var(--folder-deep);
+  --color-form: var(--form);
+  --color-form-ink: var(--form-ink);
+  --color-form-muted: var(--form-muted);
+  --color-stamp: var(--stamp);
+  --color-clear: var(--clear);
+  --color-tape: var(--tape);
+  --color-on-desk: var(--on-desk);
+  --color-on-desk-muted: var(--on-desk-muted);
+  --color-on-desk-faint: var(--on-desk-faint);
+
+  --font-typewriter: var(--font-courier);
+  --font-stamp: var(--font-archivo-black);
 }
 
 /* ── Base ── */
@@ -79,106 +94,339 @@ html {
 
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-dm-sans), system-ui, -apple-system, sans-serif;
+  background: var(--desk);
+  color: var(--on-desk);
+  font-family: var(--font-courier), "Courier New", monospace;
+  font-size: 15px;
+  line-height: 1.6;
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   overflow-x: hidden;
 }
 
+/* Desk grain. Two offset dot fields, not a gradient wash. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  background-image: radial-gradient(var(--desk-edge) 0.5px, transparent 0.5px);
+  background-size: 4px 4px;
+}
+
 ::selection {
-  background: #f9b598;
-  color: var(--paper);
+  background: var(--folder);
+  color: var(--desk);
 }
+
 :focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-button:focus-visible {
+  outline: 2px solid var(--folder-lit);
   outline-offset: 2px;
 }
 
-/* ── Micro label — mono uppercase 7-9px +0.6px tracking ── */
-.micro {
-  font-family: var(--font-dm-mono), ui-monospace, monospace;
-  font-size: 9px;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  line-height: 1;
-}
+/* ── Type roles ── */
 
-/* ── Display — tight, confident ── */
-.display {
-  font-weight: 650;
-  letter-spacing: -0.06em;
-  line-height: 0.95;
-}
-
-/* ── GTA stencil for LEONIDA wordmark ── */
-.gta-stencil {
-  font-family: var(--font-bebas), var(--font-dm-sans), sans-serif;
+/* The stamp: heavy, rare, large. Case numbers and verdicts only. */
+.stamp-type {
+  font-family: var(--font-archivo-black), Impact, sans-serif;
   font-weight: 400;
-  letter-spacing: 0.04em;
+  letter-spacing: -0.02em;
   line-height: 0.9;
+  text-transform: uppercase;
 }
 
-/* ── Reduced motion ── */
+/* The typewriter voice. Default body face; used at every size. */
+.type {
+  font-family: var(--font-courier), "Courier New", monospace;
+}
+
+/* Typed form label — the small print on a carbon-copy form. */
+.field {
+  font-family: var(--font-courier), "Courier New", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+/* Handwritten case annotation. */
+.hand {
+  font-family: var(--font-courier), "Courier New", monospace;
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
+
+/* ── Paper surfaces ── */
+
+/* Manila folder — what an exhibit is mounted in. */
+.folder {
+  background: var(--folder);
+  color: var(--desk);
+  border: 1px solid var(--folder-deep);
+  position: relative;
+}
+
+/* Folder tab — the die-cut index tab on the top edge. */
+.folder-tab {
+  position: relative;
+}
+.folder-tab::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 132px;
+  height: 26px;
+  background: var(--folder-lit);
+  border: 1px solid var(--folder-deep);
+  border-bottom: none;
+}
+
+/* Case-file form — the printed paperwork. */
+.form {
+  background: var(--form);
+  color: var(--form-ink);
+  border: 1px solid var(--form-line);
+  position: relative;
+}
+
+/* Rule under a label: label, then a line to write on. */
+.rule {
+  flex: 1;
+  border-bottom: 1px dotted var(--form-line);
+  min-width: 1.5rem;
+  align-self: flex-end;
+  margin-bottom: 3px;
+}
+
+/* ── The redaction: the one place boldness is spent ── */
+
+/* A censor bar sitting over content. */
+.tape {
+  background: var(--tape);
+  color: transparent;
+  user-select: none;
+}
+
+/* Evidence bag tape: the striped seal band. */
+.tape-band {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--tape),
+    var(--tape) 9px,
+    var(--desk-edge) 9px,
+    var(--desk-edge) 18px
+  );
+}
+
+/* ── Rubber stamp ── */
+.stamp {
+  border: 3px solid currentColor;
+  padding: 6px 16px;
+  font-family: var(--font-archivo-black), Impact, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  /* Ink doesn't fill evenly — a mask of tiny gaps reads as a real impression. */
+  -webkit-mask-image: radial-gradient(#000 62%, rgba(0, 0, 0, 0.72) 100%);
+  mask-image: radial-gradient(#000 62%, rgba(0, 0, 0, 0.72) 100%);
+}
+
+.stamp-red {
+  color: var(--stamp);
+}
+.stamp-green {
+  color: var(--clear);
+}
+
+/* Stamp landing: overshoot, then settle, with a slight misalignment. */
+@keyframes stamp-land {
+  0% {
+    opacity: 0;
+    transform: scale(1.35) rotate(-9deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.97) rotate(-2.5deg);
+  }
+  75% {
+    transform: scale(1.02) rotate(-3.4deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-3deg);
+  }
+}
+
+.stamp-land {
+  animation: stamp-land 0.42s var(--ease-paper) both;
+}
+
+/* ── Buttons: a labelled control on a machine, not a pill ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid var(--folder-deep);
+  background: transparent;
+  color: var(--folder);
+  font-family: var(--font-courier), "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.16s var(--ease-paper), color 0.16s var(--ease-paper),
+    border-color 0.16s var(--ease-paper);
+}
+
+.btn:hover {
+  background: var(--folder);
+  border-color: var(--folder);
+  color: var(--desk);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Primary: filled manila, like a stamped approval. */
+.btn-solid {
+  background: var(--folder);
+  border-color: var(--folder);
+  color: var(--desk);
+}
+
+.btn-solid:hover {
+  background: var(--folder-lit);
+  border-color: var(--folder-lit);
+}
+
+/* Destructive: the stamp colour. */
+.btn-stamp {
+  border-color: var(--stamp);
+  color: var(--stamp);
+}
+
+.btn-stamp:hover {
+  background: var(--stamp);
+  border-color: var(--stamp);
+  color: var(--form);
+}
+
+.btn-clear {
+  border-color: var(--clear);
+  color: var(--clear);
+}
+
+.btn-clear:hover {
+  background: var(--clear);
+  border-color: var(--clear);
+  color: var(--form);
+}
+
+/* ── Docket row — one exhibit in the rail ── */
+.docket {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--desk-edge);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.16s var(--ease-paper), border-color 0.16s var(--ease-paper);
+}
+
+.docket:hover {
+  background: rgba(201, 169, 106, 0.07);
+}
+
+.docket-active {
+  background: rgba(201, 169, 106, 0.11);
+  border-color: var(--folder-deep);
+}
+
+/* ── Hairline rule ── */
+.hair {
+  height: 1px;
+  background: var(--desk-edge);
+  border: none;
+  margin: 0;
+}
+
+/* ── Ledger numerals ── */
+.ledger {
+  font-family: var(--font-courier), "Courier New", monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ── Motion ── */
+@keyframes blink-caret {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.caret {
+  animation: blink-caret 1.05s steps(1, end) infinite;
+}
+
+@keyframes tape-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ── Accessibility floor ── */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation: none !important;
-    transition: none !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .caret {
+    animation: none;
   }
 }
 
-/* ── Scrollbar ── */
+/* ── Scrollbar: a thin rail on the desk ── */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: var(--desk-edge) transparent;
 }
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--line-strong);
-  border-radius: 999px;
+  width: 9px;
+  height: 9px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--desk-deep);
 }
-
-/* ── Keyframes ── */
-@keyframes float-slow {
-  0%,
-  100% {
-    translate: 0 0;
-  }
-  50% {
-    translate: 0 -6px;
-  }
+::-webkit-scrollbar-thumb {
+  background: var(--desk-edge);
+  border: 2px solid var(--desk-deep);
 }
-
-@keyframes scan-sweep {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(350%);
-  }
-}
-
-@keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
+::-webkit-scrollbar-thumb:hover {
+  background: var(--folder-deep);
 }

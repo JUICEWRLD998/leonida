@@ -1,39 +1,39 @@
-import type { Metadata } from "next";
-import { DM_Sans, DM_Mono, Bebas_Neue } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Courier_Prime, Archivo_Black } from "next/font/google";
 import "./globals.css";
 
-const dmSans = DM_Sans({
+// Everything in a property room is typed on a Courier. This is the file's voice.
+const courier = Courier_Prime({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-dm-sans",
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-courier",
   display: "swap",
 });
 
-const dmMono = DM_Mono({
+// The stamp. Heavy enough to look pressed into paper, used large and rarely.
+const archivoBlack = Archivo_Black({
   subsets: ["latin"],
   weight: ["400"],
-  variable: "--font-dm-mono",
-  display: "swap",
-});
-
-const bebas = Bebas_Neue({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-bebas",
+  variable: "--font-archivo-black",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "LEONIDA — Evidence Locker",
+  title: "LEONIDA PD — Evidence Locker · Case 06",
   description:
-    "Doctor police surveillance photos to make the case get thrown out before forensics catches you. A GTA VI-inspired forensic terminal built with React Image Editor.",
+    "Alter three exhibits until forensics can no longer match a single flagged region, and get the case thrown out. A GTA VI-inspired forensic game built with React Image Editor.",
   openGraph: {
-    title: "LEONIDA — Evidence Locker",
+    title: "LEONIDA PD — Evidence Locker",
     description:
-      "Doctor the evidence. Beat the system. A GTA VI-inspired forensic terminal.",
+      "Alter the exhibit. Get the case thrown out. A GTA VI-inspired forensic game.",
     type: "website",
     images: [{ url: "/gta6-cover.jpg", width: 1200, height: 630 }],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#16130F",
 };
 
 export default function RootLayout({
@@ -42,10 +42,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`h-full antialiased ${dmSans.variable} ${dmMono.variable} ${bebas.variable}`}>
-      <body className="min-h-full flex flex-col bg-[var(--paper)] text-[var(--ink)]">
-        {children}
-      </body>
+    <html
+      lang="en"
+      className={`h-full antialiased ${courier.variable} ${archivoBlack.variable}`}
+    >
+      <body className="min-h-full">{children}</body>
     </html>
   );
 }

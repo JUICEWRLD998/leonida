@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { EVIDENCE } from "@/lib/evidence";
 import { scoreForensics, type ScoreResult } from "@/lib/scorer";
 import { generatePoster } from "@/lib/poster";
 import { ForensicsTerminal } from "@/components/ForensicsTerminal";
-import { ForensicSweep } from "@/components/ForensicSweep";
-import { VerdictScreen } from "@/components/VerdictScreen";
+import { VerdictStamp } from "@/components/VerdictStamp";
+import { ScanReport } from "@/components/ScanReport";
 
-// ── State ──────────────────────────────────────────────────────────
 type GamePhase = "landing" | "evidence" | "terminal" | "scanning" | "verdict" | "complete";
 
 type GameState = {
@@ -19,6 +19,13 @@ type GameState = {
   posterUrl: string | null;
   posters: string[];
 };
+
+// "CASE 06-A — CORNER STORE" → { id: "06-A", name: "CORNER STORE" }
+function splitLabel(label: string, id: string) {
+  const name = label.includes("—") ? label.split("—").slice(1).join("—").trim() : label;
+  const short = label.replace(/^CASE\s*/i, "").split("—")[0].trim();
+  return { court: short || id, name };
+}
 
 export default function Home() {
   const [state, setState] = useState<GameState>({
@@ -32,6 +39,7 @@ export default function Home() {
 
   const evidence = EVIDENCE[state.evidenceIndex];
   const isLast = state.evidenceIndex === EVIDENCE.length - 1;
+  const cleared = state.posters.length;
 
   const handleEnter = useCallback(() => setState((s) => ({ ...s, phase: "evidence" })), []);
   const handleOpenTerminal = useCallback(
@@ -43,7 +51,7 @@ export default function Home() {
   const handleSubmit = useCallback(
     async (dataUrl: string) => {
       setState((s) => ({ ...s, phase: "scanning", editedDataUrl: dataUrl }));
-      await new Promise((r) => setTimeout(r, 1200));
+      await new Promise((r) => setTimeout(r, 2200));
       const ev = EVIDENCE[state.evidenceIndex];
       let result: ScoreResult;
       try {
@@ -92,7 +100,10 @@ export default function Home() {
       }));
   }, [isLast]);
 
-  const handleRetry = useCallback(() => setState((s) => ({ ...s, phase: "terminal", score: null })), []);
+  const handleRetry = useCallback(
+    () => setState((s) => ({ ...s, phase: "terminal", score: null, posterUrl: null })),
+    []
+  );
   const handleRestart = useCallback(
     () =>
       setState({
@@ -107,206 +118,380 @@ export default function Home() {
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--paper)]">
-      {/* ═══ NAV ═══ */}
-      <nav className="sticky top-0 z-30 border-b border-[var(--line)] bg-[var(--paper)]/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-[56px] max-w-[1120px] items-center justify-between gap-4 px-5 sm:px-8">
-          <button onClick={handleRestart} className="flex items-center gap-3 text-left">
-            <div className="grid h-8 w-8 place-items-center rounded-[9px] bg-[var(--accent)] text-[11px] font-bold tracking-widest text-[var(--on-accent)] shadow-[0_2px_0_rgba(232,72,20,0.12)]">
-              L
-            </div>
-            <div className="leading-none">
-              <p className="text-[13px] font-semibold tracking-[-0.35px] text-[var(--ink)]">Leonida</p>
-              <p className="micro text-[var(--muted)]">Evidence Locker</p>
-            </div>
-          </button>
+    <div className="relative z-[1] flex min-h-screen flex-col">
+      <Letterhead onRestart={handleRestart} cleared={cleared} />
 
-          {/* Center — progress pills (desktop) */}
-          <div className="hidden items-center gap-2 sm:flex">
-            {EVIDENCE.map((ev, i) => {
-              const done = state.posters.length > i;
-              const active = state.evidenceIndex === i && state.phase !== "landing" && state.phase !== "complete";
-              return (
-                <div
-                  key={ev.id}
-                  className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-colors ${
-                    done
-                      ? "border-[var(--success-line)] bg-[var(--success-soft)] text-[var(--success)]"
-                      : active
-                        ? "border-[var(--line-strong)] bg-[var(--surface)] text-[var(--ink)]"
-                        : "border-[var(--line)] bg-transparent text-[var(--faint)]"
-                  }`}
-                >
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${done ? "bg-[var(--success)]" : active ? "bg-[var(--accent)] animate-[pulse-dot_1.2s_ease-in-out_infinite]" : "bg-[var(--line-strong)]"}`}
-                  />
-                  <span className="hidden text-[11px] font-medium tracking-[-0.15px] lg:inline">{ev.id}</span>
-                  <span className="text-[11px] font-medium lg:hidden">{i + 1}</span>
+      <div className="mx-auto grid w-full max-w-[1440px] flex-1 grid-cols-1 gap-0 px-4 sm:px-6 lg:grid-cols-[290px_1fr] lg:gap-8 lg:py-8">
+        <DocketRail
+          index={state.evidenceIndex}
+          phase={state.phase}
+          cleared={cleared}
+          onJump={(i) => setState((s) => ({ ...s, evidenceIndex: i, phase: "evidence" }))}
+        />
+
+        <main className="min-w-0 pb-14 lg:pb-0">
+          <AnimatePresence mode="wait" initial={false}>
+            {state.phase === "landing" && (
+              <Phase key="landing">
+                <CaseFile onEnter={handleEnter} cleared={cleared} onRestart={handleRestart} />
+              </Phase>
+            )}
+
+            {state.phase === "evidence" && (
+              <Phase key={`evidence-${state.evidenceIndex}`}>
+                <ExhibitFolder
+                  evidence={evidence}
+                  index={state.evidenceIndex}
+                  total={EVIDENCE.length}
+                  onOpen={handleOpenTerminal}
+                />
+              </Phase>
+            )}
+
+            {state.phase === "terminal" && (
+              <Phase key={`terminal-${state.evidenceIndex}`}>
+                <div className="flex flex-col gap-5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-3">
+                    <h2 className="stamp-type text-[19px] text-[var(--folder)]">
+                      Altering exhibit {splitLabel(evidence.label, evidence.id).court}
+                    </h2>
+                    <button onClick={handleBack} className="btn" type="button">
+                      Close terminal
+                    </button>
+                  </div>
+                  <ForensicsTerminal image={evidence.imageBase64} onSubmit={handleSubmit} />
                 </div>
-              );
-            })}
-          </div>
+              </Phase>
+            )}
 
-          <div className="flex items-center gap-2">
-            <span className="hidden rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 font-mono text-[10px] tracking-widest text-[var(--muted)] sm:inline">
-              CASE LEONIDA
-            </span>
-            <span className="rounded-full bg-[var(--ink)] px-3 py-1.5 text-xs font-semibold tracking-[-0.2px] text-[var(--paper)]">
-              {state.posters.length} / {EVIDENCE.length} dismissed
-            </span>
-          </div>
-        </div>
-      </nav>
+            {state.phase === "scanning" && (
+              <Phase key={`scanning-${state.evidenceIndex}`}>
+                <RedactionSweep evidence={evidence} editedUrl={state.editedDataUrl} />
+              </Phase>
+            )}
 
-      {/* ═══ MAIN ═══ */}
-      <main className="mx-auto flex w-full max-w-[1120px] flex-1 flex-col px-5 py-6 sm:px-8 sm:py-8">
-        {state.phase === "landing" && <Landing onEnter={handleEnter} posters={state.posters.length} />}
-        {state.phase === "evidence" && (
-          <EvidenceView evidence={evidence} index={state.evidenceIndex} total={EVIDENCE.length} onOpen={handleOpenTerminal} />
-        )}
-        {state.phase === "terminal" && (
-          <div className="flex flex-col gap-4">
-            <button onClick={handleBack} className="self-start rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:border-[var(--line-strong)] hover:text-[var(--ink)]">
-              ← Back to evidence
-            </button>
-            <ForensicsTerminal image={evidence.imageBase64} onSubmit={handleSubmit} />
-          </div>
-        )}
-        {state.phase === "scanning" && (
-          <div className="flex flex-col gap-5">
-            <EvidencePreview evidence={evidence} editedUrl={state.editedDataUrl} />
-            <ForensicSweep scanning score={null} />
-          </div>
-        )}
-        {state.phase === "verdict" && state.score && (
-          <div className="flex flex-col gap-5">
-            <EvidencePreview evidence={evidence} editedUrl={state.editedDataUrl} />
-            <ForensicSweep scanning={false} score={state.score} />
-            <VerdictScreen verdict={state.score.verdict} score={state.score} onNext={handleNext} onRetry={handleRetry} isLast={isLast} />
-            {state.posterUrl && <PosterCard posterUrl={state.posterUrl} caseLabel={evidence.id} />}
-          </div>
-        )}
-        {state.phase === "complete" && <Complete posters={state.posters} onRestart={handleRestart} />}
-      </main>
+            {state.phase === "verdict" && state.score && (
+              <Phase key={`verdict-${state.evidenceIndex}`}>
+                <div className="flex flex-col gap-5">
+                  <VerdictStamp
+                    verdict={state.score.verdict}
+                    score={state.score}
+                    onNext={handleNext}
+                    onRetry={handleRetry}
+                    isLast={isLast}
+                  />
+                  <ScanReport score={state.score} evidenceId={evidence.id} />
+                  {state.posterUrl && (
+                    <PosterSheet posterUrl={state.posterUrl} caseId={evidence.id} />
+                  )}
+                </div>
+              </Phase>
+            )}
 
-      <footer className="border-t border-[var(--line)] py-5 text-center">
-        <p className="micro tracking-[0.5px] text-[var(--faint)]">Leonida Police Dept. — Forensics Division — Built with React Image Editor</p>
-        <p className="micro mt-1 text-[7px] tracking-[0.4px] text-[var(--faint)] opacity-60">GTA VI inspired — not affiliated with Rockstar Games — #BuiltWithImageEditor</p>
-      </footer>
+            {state.phase === "complete" && (
+              <Phase key="complete">
+                <CaseClosed posters={state.posters} onRestart={handleRestart} />
+              </Phase>
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
+
+      <Colophon />
     </div>
   );
 }
 
-// ── Landing ────────────────────────────────────────────────────
-function Landing({ onEnter, posters }: { onEnter: () => void; posters: number }) {
+// ── Phase wrapper: one quiet transition, no per-section fade-ups ──
+function Phase({ children }: { children: React.ReactNode }) {
+  const reduced = useReducedMotion();
   return (
-    <div className="flex flex-1 flex-col gap-8">
-      {/* Hero — real GTA VI cover */}
-      <div className="relative overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-raised)]">
-        <div className="relative">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/gta6-cover.jpg" alt="Grand Theft Auto VI — Leonida" className="h-[360px] w-full object-cover object-top sm:h-[460px]" />
-          {/* Warm gradient so text stays legible */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0a14] via-[#0c0a14]/55 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0c0a14]/70 via-transparent to-transparent" />
+    <motion.div
+      initial={reduced ? false : { opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={reduced ? undefined : { opacity: 0, y: -6 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
-          {/* Eyebrow */}
-          <div className="absolute left-5 top-5 flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 backdrop-blur-md sm:left-7 sm:top-6">
-            <span className="h-2 w-2 animate-[pulse-dot_1.4s_ease-in-out_infinite] rounded-full bg-[var(--danger)] shadow-[0_0_8px_var(--danger)]" />
-            <span className="micro text-white/90">Case Leonida — 3 items pending</span>
+// ── Letterhead ─────────────────────────────────────────────────
+function Letterhead({ onRestart, cleared }: { onRestart: () => void; cleared: number }) {
+  return (
+    <header className="sticky top-0 z-30 border-b border-[var(--desk-edge)] bg-[var(--desk)]/96 backdrop-blur-[2px]">
+      <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
+        <button
+          onClick={onRestart}
+          type="button"
+          className="flex items-baseline gap-3 text-left"
+          aria-label="Leonida Police Department, Property and Evidence. Return to start."
+        >
+          <span
+            className="stamp-type text-[22px] text-[var(--folder)] sm:text-[26px]"
+            aria-hidden
+          >
+            LPD
+          </span>
+          <span className="hidden leading-tight sm:block">
+            <span className="field block text-[var(--on-desk-muted)]">
+              Leonida Police Department
+            </span>
+            <span className="field block text-[var(--on-desk-faint)]">
+              Property &amp; Evidence Division
+            </span>
+          </span>
+        </button>
+
+        <div className="ml-auto flex flex-wrap items-center gap-x-6 gap-y-1">
+          <span className="flex items-baseline gap-2">
+            <span className="field text-[var(--on-desk-faint)]">Case</span>
+            <span className="ledger text-[15px] text-[var(--folder)]">06</span>
+          </span>
+          <span className="flex items-baseline gap-2">
+            <span className="field text-[var(--on-desk-faint)]">Cleared</span>
+            <span
+              className={`ledger text-[15px] ${
+                cleared === EVIDENCE.length ? "text-[var(--clear)]" : "text-[var(--on-desk)]"
+              }`}
+            >
+              {cleared}/{EVIDENCE.length}
+            </span>
+          </span>
+          <StationClock />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function StationClock() {
+  const [t, setT] = useState("");
+  useEffect(() => {
+    const tick = () =>
+      setT(new Date().toLocaleTimeString("en-GB", { hour12: false }));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <span className="hidden items-baseline gap-2 sm:flex">
+      <span className="field text-[var(--on-desk-faint)]">Logged</span>
+      <span className="ledger text-[15px] text-[var(--on-desk-muted)]">
+        {t || "--:--:--"}
+      </span>
+    </span>
+  );
+}
+
+// ── Docket rail ────────────────────────────────────────────────
+function DocketRail({
+  index,
+  phase,
+  cleared,
+  onJump,
+}: {
+  index: number;
+  phase: GamePhase;
+  cleared: number;
+  onJump: (i: number) => void;
+}) {
+  const live = phase !== "landing" && phase !== "complete";
+
+  return (
+    <aside className="border-b border-[var(--desk-edge)] lg:sticky lg:top-[73px] lg:self-start lg:border-b-0 lg:pt-8">
+      <p className="field px-3 pt-4 text-[var(--on-desk-faint)] lg:pt-0">
+        Docket — exhibits filed
+      </p>
+
+      <div className="mt-2 flex gap-0 overflow-x-auto lg:block lg:overflow-visible">
+        {EVIDENCE.map((ev, i) => {
+          const done = cleared > i;
+          const active = live && index === i;
+          const { court, name } = splitLabel(ev.label, ev.id);
+          return (
+            <button
+              key={ev.id}
+              type="button"
+              onClick={() => onJump(i)}
+              className={`docket shrink-0 lg:w-full ${active ? "docket-active" : ""}`}
+              aria-current={active ? "true" : undefined}
+            >
+              <span className="field w-[52px] shrink-0 text-[var(--on-desk-faint)]">
+                {court}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span
+                  className={`block truncate text-[13px] ${
+                    active ? "text-[var(--on-desk)]" : "text-[var(--on-desk-muted)]"
+                  }`}
+                >
+                  {name}
+                </span>
+                <span className="mt-0.5 flex flex-wrap gap-x-2">
+                  {ev.flags.map((f) => (
+                    <span key={f} className="field text-[var(--stamp)]">
+                      {f.replace(" DETECTED", "")}
+                    </span>
+                  ))}
+                </span>
+              </span>
+              <span
+                className="field shrink-0"
+                style={{
+                  color: done
+                    ? "var(--clear)"
+                    : active
+                      ? "var(--folder)"
+                      : "var(--on-desk-faint)",
+                }}
+              >
+                {done ? "Clrd" : active ? "Open" : "Pend"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Chain of custody */}
+      <div className="mt-5 hidden border border-[var(--desk-edge)] p-4 lg:block">
+        <p className="field text-[var(--on-desk-faint)]">Chain of custody</p>
+        <div className="mt-3 space-y-2">
+          {[
+            ["Received", "02:31"],
+            ["Examiner", "Det. R. Ibarra"],
+            ["Storage", "Rack 12 · Bay 4"],
+          ].map(([k, v]) => (
+            <div key={k} className="flex items-baseline gap-2">
+              <span className="field text-[var(--on-desk-faint)]">{k}</span>
+              <span className="rule" />
+              <span className="text-[12px] text-[var(--on-desk-muted)]">{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+// ── Landing: the case file ─────────────────────────────────────
+function CaseFile({
+  onEnter,
+  cleared,
+  onRestart,
+}: {
+  onEnter: () => void;
+  cleared: number;
+  onRestart: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="folder folder-tab mt-6 pt-9 lg:mt-8"
+    >
+      <div className="grid grid-cols-1 gap-6 p-5 sm:p-7 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
+        {/* Typed cover sheet */}
+        <div className="pt-2">
+          <p className="field text-[var(--folder-ink)]">Case file</p>
+          <h1 className="stamp-type mt-2 text-[38px] leading-[0.88] text-[var(--desk)] sm:text-[54px]">
+            Case 06
+            <br />
+            Evidence
+            <br />
+            Locker
+          </h1>
+
+          <div className="mt-6 max-w-[54ch] space-y-2.5">
+            {[
+              ["Subject", "Unidentified — one male"],
+              ["Offence", "Armed robbery, corner store"],
+              ["Exhibits", "Three surveillance stills"],
+              ["Status", "Open — exhibits intact"],
+            ].map(([k, v]) => (
+              <div key={k} className="flex items-baseline gap-3">
+                <span className="field w-[76px] shrink-0 text-[var(--folder-ink)]">
+                  {k}
+                </span>
+                <span className="rule" style={{ borderColor: "var(--folder-line)" }} />
+                <span className="text-[13px] font-bold text-[var(--desk)]">{v}</span>
+              </div>
+            ))}
           </div>
 
-          {/* Title lockup */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-            <p className="micro tracking-[0.3em] text-white/60">Vice City — Leonida — 02:14 AM</p>
-            <h1 className="gta-stencil mt-2 text-[56px] text-white sm:text-[84px]" style={{ textShadow: "0 2px 32px rgba(0,0,0,0.9), 0 0 48px rgba(255,107,53,0.25)" }}>
-              LEONIDA
-            </h1>
-            <p className="gta-stencil -mt-1 text-[22px] tracking-[0.22em] text-white/90 sm:text-[28px]">EVIDENCE LOCKER</p>
-            <p className="mt-3 max-w-[520px] text-[13px] leading-[1.7] tracking-[-0.15px] text-white/65">
-              Three surveillance photos. Two incriminating details each. Doctor the evidence before forensics closes the case — crop, redact, blur, and deceive.
+          <div className="mt-6 border-t border-[var(--folder-line)] pt-4">
+            <p className="field text-[var(--folder-ink)]">Examiner note</p>
+            <p className="hand mt-2 max-w-[50ch] text-[14px] leading-[1.7] text-[var(--desk)]">
+              &ldquo;Each still carries a readable face and a plate. Alter the exhibits
+              until forensics can&rsquo;t match either one, and this case falls apart
+              on its own.&rdquo;
             </p>
           </div>
 
-          {/* Rockstar credit — tiny, honest */}
-          <span className="micro absolute bottom-3 right-4 hidden text-[7px] text-white/35 sm:inline">Cover: Rockstar Games — GTA VI</span>
+          <div className="mt-7 flex flex-wrap items-center gap-3">
+            <button onClick={onEnter} className="btn btn-solid" type="button">
+              Open exhibit 06-A
+            </button>
+            {cleared > 0 && (
+              <button onClick={onRestart} className="btn" type="button">
+                Start over
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* CTA bar under image */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--line)] bg-[var(--paper-soft)] px-6 py-4 sm:px-7">
-          <div className="flex flex-wrap items-center gap-2">
-            {[
-              { k: "Built with", v: "React Image Editor" },
-              { k: "Mode", v: "Forensic evasion" },
-              { k: "Time", v: "~3 min" },
-            ].map((s) => (
-              <span key={s.k} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1">
-                <span className="micro text-[var(--faint)]">{s.k}</span>
-                <span className="text-xs font-medium tracking-[-0.15px] text-[var(--ink)]">{s.v}</span>
+        {/* Scene photo, taped to the file */}
+        <div className="relative">
+          <div className="relative rotate-[1.4deg] border border-[var(--folder-deep)] bg-[var(--exhibit)] p-2 shadow-[0_18px_40px_rgba(0,0,0,0.5)]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/gta6-cover.jpg"
+              alt="Scene photograph, Leonida, 02:14"
+              className="block h-auto w-full"
+            />
+            <p className="pt-2 pb-0.5 text-center text-[10px] tracking-[0.14em] text-[#7d7a72] uppercase">
+              Scene photo — Leonida, 02:14
+            </p>
+          </div>
+
+          {/* Tape at two corners */}
+          <span
+            className="tape-band absolute -top-3 left-6 h-6 w-24 -rotate-[6deg] shadow-sm"
+            aria-hidden
+          />
+          <span
+            className="tape-band absolute -bottom-3 right-6 h-6 w-24 rotate-[5deg] shadow-sm"
+            aria-hidden
+          />
+        </div>
+      </div>
+
+      {/* Procedure, typed into the file rather than posed as feature cards */}
+      <div className="border-t border-[var(--folder-line)] bg-[var(--folder-lit)]/45 px-5 py-4 sm:px-7">
+        <p className="field text-[var(--folder-ink)]">Procedure</p>
+        <ol className="mt-2.5 space-y-1.5">
+          {[
+            "Mount the exhibit in the forensics terminal.",
+            "Alter it — frame, mark, annotate or redact over the flagged zones.",
+            "Submit. Forensics needs 70% of every flagged zone obscured.",
+          ].map((step, i) => (
+            <li key={step} className="flex gap-3 text-[13px] leading-[1.6] text-[var(--desk)]">
+              <span className="ledger shrink-0 text-[var(--folder-ink)]">
+                {i + 1}.
               </span>
-            ))}
-          </div>
-          <button
-            onClick={onEnter}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold tracking-[-0.2px] text-[var(--on-accent)] shadow-[0_2px_0_rgba(232,72,20,0.14)] transition-all hover:translate-y-[-1px] hover:bg-[var(--accent-hover)] hover:shadow-[0_5px_16px_rgba(255,107,53,0.22)] active:translate-y-0"
-          >
-            Enter evidence locker
-            <span aria-hidden>→</span>
-          </button>
-        </div>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
       </div>
-
-      {/* How it works — 3 editorial cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        {[
-          {
-            n: "01",
-            title: "Evidence in",
-            desc: "A CCTV still with flagged face + plate. You know exactly what to hide.",
-            tone: "peach" as const,
-          },
-          {
-            n: "02",
-            title: "Tamper",
-            desc: "Crop, draw, filter, sticker — the editor is the weapon. No edit = busted.",
-            tone: "blue" as const,
-          },
-          {
-            n: "03",
-            title: "Beat forensics",
-            desc: "Deterministic pixel scan. 70% obscured in every flagged zone = dismissed.",
-            tone: "green" as const,
-          },
-        ].map((s) => (
-          <div key={s.n} className="group relative overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 transition-colors hover:border-[var(--line-strong)]">
-            <div className={`absolute left-0 top-0 h-1 w-full ${s.tone === "peach" ? "bg-[#f2bc95]" : s.tone === "blue" ? "bg-[#b8d4da]" : "bg-[#c8d8b8]"}`} />
-            <span className="micro text-[var(--faint)]">{s.n}</span>
-            <h3 className="mt-2 text-[17px] font-semibold tracking-[-0.4px] text-[var(--ink)]">{s.title}</h3>
-            <p className="mt-1.5 text-[13px] leading-[1.65] tracking-[-0.15px] text-[var(--muted)]">{s.desc}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Tool chips */}
-      <div className="flex flex-wrap justify-center gap-2">
-        {["Crop", "Draw", "Filter", "Sticker", "Text", "Shapes", "Frame", "Corners"].map((t) => (
-          <span key={t} className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1 text-xs font-medium tracking-[-0.15px] text-[var(--muted)]">
-            {t}
-          </span>
-        ))}
-      </div>
-
-      {posters > 0 && (
-        <p className="text-center text-sm font-medium text-[var(--success)]">
-          {posters} / 3 dismissed — continue where you left off or play again from the nav.
-        </p>
-      )}
-    </div>
+    </motion.div>
   );
 }
 
-// ── Evidence ───────────────────────────────────────────────────
-function EvidenceView({
+// ── Evidence: the mounted exhibit ──────────────────────────────
+function ExhibitFolder({
   evidence,
   index,
   total,
@@ -317,138 +502,284 @@ function EvidenceView({
   total: number;
   onOpen: () => void;
 }) {
+  const { court, name } = splitLabel(evidence.label, evidence.id);
+
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="flex flex-col gap-5 pt-2 lg:pt-0">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="micro text-[var(--faint)]">
-            Evidence {index + 1} / {total} — Chain of custody: intact
+          <p className="field text-[var(--on-desk-faint)]">
+            Exhibit {court} — {index + 1} of {total}
           </p>
-          <h2 className="mt-1 text-[22px] font-semibold tracking-[-0.6px] text-[var(--ink)]">{evidence.label}</h2>
-          <p className="mt-1 text-sm leading-[1.6] tracking-[-0.15px] text-[var(--muted)]">{evidence.subtitle}</p>
+          <h2 className="stamp-type mt-2 text-[30px] text-[var(--folder)] sm:text-[40px]">
+            {name}
+          </h2>
+          <p className="mt-2 max-w-[56ch] text-[13px] text-[var(--on-desk-muted)]">
+            {evidence.subtitle}
+          </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--danger-line)] bg-[var(--danger-soft)] px-3 py-1.5 text-xs font-semibold tracking-[-0.15px] text-[var(--danger)]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--danger)]" />
-          {evidence.flags.length} flags
-        </span>
+        <div className="flex flex-col items-end gap-1">
+          <span className="field text-[var(--on-desk-faint)]">Flags on this still</span>
+          <span className="stamp stamp-red rotate-[-3deg] text-[13px]">
+            {evidence.flags.length} flagged
+          </span>
+        </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)]">
-        <div className="relative aspect-[16/10] overflow-hidden bg-[#0e1629]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={evidence.imageBase64} alt={evidence.label} className="h-full w-full object-cover" />
-          {/* Subtle scanline */}
-          <div
-            className="pointer-events-none absolute inset-0 opacity-[0.035]"
+      <div className="folder folder-tab pt-9">
+        <div className="p-4 sm:p-6">
+          <div className="relative border border-[var(--folder-deep)] bg-[var(--exhibit)] p-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={evidence.imageBase64}
+              alt={evidence.label}
+              className="block h-auto w-full"
+            />
+
+            {/* Flagged zones, marked on the still itself */}
+            <div className="absolute top-4 left-4 flex flex-col gap-2">
+              {evidence.flags.map((f) => (
+                <span key={f} className="stamp stamp-red bg-[var(--desk)]/70 text-[11px] backdrop-blur-[2px]">
+                  {f}
+                </span>
+              ))}
+            </div>
+
+            <span className="ledger absolute right-4 bottom-4 bg-[var(--desk)]/75 px-2 py-1 text-[11px] text-[var(--folder-lit)]">
+              {evidence.id}
+            </span>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="max-w-[46ch] text-[12.5px] text-[var(--folder-ink)]">
+              Open the forensics terminal to mount and alter this exhibit.
+            </p>
+            <button onClick={onOpen} className="btn btn-solid" type="button">
+              Open forensics terminal
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2" aria-hidden>
+        {Array.from({ length: total }, (_, i) => (
+          <span
+            key={i}
+            className="h-[3px] transition-all"
             style={{
-              background: "repeating-linear-gradient(0deg, transparent, transparent 2px, #14F0B8 2px, #14F0B8 3px)",
+              width: i === index ? 34 : 18,
+              background:
+                i === index
+                  ? "var(--folder)"
+                  : i < index
+                    ? "var(--folder-deep)"
+                    : "var(--desk-edge)",
             }}
           />
-          <div className="absolute left-3 top-3 flex flex-col gap-1.5">
-            {evidence.flags.map((f) => (
-              <span key={f} className="inline-flex items-center gap-1.5 rounded-full bg-[var(--danger)] px-2.5 py-1 text-[10px] font-bold tracking-widest text-white shadow-lg">
-                <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                {f}
-              </span>
-            ))}
-          </div>
-          <div className="absolute bottom-3 right-3 rounded-full bg-black/55 px-2.5 py-1 text-[10px] tracking-widest text-white/80 backdrop-blur">
-            {evidence.id} — REC 02:14:33
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] bg-[var(--paper-soft)] px-4 py-3 sm:px-5">
-          <span className="micro text-[var(--faint)]">Open the terminal to tamper with this evidence</span>
-          <button onClick={onOpen} className="rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold tracking-[-0.2px] text-[var(--on-accent)] shadow-[0_2px_0_rgba(232,72,20,0.12)] transition-all hover:translate-y-[-1px] hover:bg-[var(--accent-hover)] active:translate-y-0">
-            Open forensics terminal →
-          </button>
-        </div>
-      </div>
-
-      <div className="flex justify-center gap-1.5">
-        {Array.from({ length: total }, (_, i) => (
-          <span key={i} className={`h-1.5 rounded-full transition-all ${i === index ? "w-8 bg-[var(--accent)]" : i < index ? "w-5 bg-[var(--accent)]/35" : "w-5 bg-[var(--line)]"}`} />
         ))}
       </div>
     </div>
   );
 }
 
-function EvidencePreview({ evidence, editedUrl }: { evidence: (typeof EVIDENCE)[number]; editedUrl: string | null }) {
+// ── Scanning: the redaction ────────────────────────────────────
+function RedactionSweep({
+  evidence,
+  editedUrl,
+}: {
+  evidence: (typeof EVIDENCE)[number];
+  editedUrl: string | null;
+}) {
+  const reduced = useReducedMotion();
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)]">
-      <div className="relative aspect-[16/10] overflow-hidden bg-[#0e1629]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={editedUrl ?? evidence.imageBase64} alt="Edited evidence" className="h-full w-full object-cover" />
+    <div className="flex flex-col gap-5 pt-2 lg:pt-0">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="field text-[var(--on-desk-faint)]">Submitted for analysis</p>
+          <h2 className="stamp-type mt-2 text-[30px] text-[var(--folder)] sm:text-[38px]">
+            Running forensics
+          </h2>
+        </div>
+        <span className="field text-[var(--on-desk-muted)]">
+          Reading pixels <span className="caret">_</span>
+        </span>
       </div>
-      <div className="border-t border-[var(--line)] bg-[var(--paper-soft)] px-4 py-2.5">
-        <span className="micro text-[var(--faint)]">{editedUrl ? "Edited — submitted to forensics" : evidence.id} — awaiting verdict</span>
+
+      <div className="folder folder-tab pt-9">
+        <div className="p-4 sm:p-6">
+          <div className="relative overflow-hidden border border-[var(--folder-deep)] bg-[var(--exhibit)] p-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={editedUrl ?? evidence.imageBase64}
+              alt="Exhibit submitted for analysis"
+              className="block h-auto w-full"
+            />
+
+            {/* The tape bar wipes across, redacting as it passes */}
+            <motion.div
+              className="pointer-events-none absolute inset-y-0 w-[38%]"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, rgba(20,18,14,0.9), rgba(20,18,14,0.98))",
+                mixBlendMode: "multiply",
+              }}
+              initial={reduced ? { left: "0%" } : { left: "-40%" }}
+              animate={reduced ? { left: "0%" } : { left: "100%" }}
+              transition={{ duration: 1.9, ease: "linear", repeat: reduced ? 0 : Infinity }}
+            />
+
+            {/* Redaction bars settle over the flagged zones */}
+            {evidence.flags.map((_, i) => (
+              <motion.span
+                key={i}
+                className="tape absolute left-[6%] h-[9%] w-[26%]"
+                style={{ top: `${20 + i * 26}%` }}
+                initial={{ clipPath: "inset(0 100% 0 0)" }}
+                animate={{ clipPath: "inset(0 0% 0 0)" }}
+                transition={{ duration: 0.7, delay: 0.6 + i * 0.28, ease: [0.22, 1, 0.36, 1] }}
+                aria-hidden
+              />
+            ))}
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {["Matching face", "Matching plate", "Checking layer integrity"].map(
+              (label, i) => (
+                <motion.div
+                  key={label}
+                  className="flex items-baseline gap-2"
+                  initial={{ opacity: 0.35 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.4, delay: 0.5 + i * 0.45 }}
+                >
+                  <span className="field text-[var(--folder-ink)]">›</span>
+                  <span className="text-[12.5px] text-[var(--desk)]">{label}</span>
+                </motion.div>
+              )
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function PosterCard({ posterUrl, caseLabel }: { posterUrl: string; caseLabel: string }) {
+// ── Poster sheet ───────────────────────────────────────────────
+function PosterSheet({ posterUrl, caseId }: { posterUrl: string; caseId: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--success-line)] bg-[var(--surface)] p-4 shadow-[var(--shadow-card)]">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold tracking-[-0.3px] text-[var(--ink)]">Poster — {caseLabel}</h3>
-        <span className="rounded-full bg-[var(--success-soft)] px-2.5 py-1 text-[10px] font-bold tracking-widest text-[var(--success)]">1080 × 1350</span>
+    <div className="border border-[var(--clear)] bg-[var(--desk-deep)]">
+      <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--clear)] px-4 py-3">
+        <span className="field text-[var(--clear)]">Dismissal notice issued</span>
+        <span className="ledger text-[12px] text-[var(--on-desk-muted)]">
+          1080 × 1350
+        </span>
       </div>
-      <div className="mt-3 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--paper)]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={posterUrl} alt={`Poster for ${caseLabel}`} className="mx-auto max-h-[520px] w-auto object-contain" />
-      </div>
-      <div className="mt-3 flex gap-2">
-        <a href={posterUrl} download={`leonida-${caseLabel.toLowerCase()}-poster.png`} className="flex flex-1 items-center justify-center rounded-full bg-[var(--accent)] py-3 text-center text-sm font-semibold tracking-[-0.2px] text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-hover)]">
-          Download poster
-        </a>
-        <button
-          onClick={async () => {
-            try {
-              const blob = await (await fetch(posterUrl)).blob();
-              const file = new File([blob], `leonida-${caseLabel}.png`, { type: "image/png" });
-              if (navigator.canShare?.({ files: [file] })) {
-                await navigator.share({
-                  files: [file],
-                  title: `LEONIDA — ${caseLabel} dismissed`,
-                  text: "Doctor the evidence. Beat the system. #BuiltWithImageEditor @unlayer",
+
+      <div className="p-4 sm:p-5">
+        <div className="mx-auto max-w-[400px] border border-[var(--desk-edge)] bg-[var(--exhibit)] p-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={posterUrl}
+            alt={`Dismissal notice for exhibit ${caseId}`}
+            className="block h-auto w-full"
+          />
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <a
+            href={posterUrl}
+            download={`leonida-${caseId.toLowerCase()}-dismissal.png`}
+            className="btn btn-clear flex-1"
+          >
+            Download notice
+          </a>
+          <button
+            type="button"
+            className="btn flex-1"
+            onClick={async () => {
+              try {
+                const blob = await (await fetch(posterUrl)).blob();
+                const file = new File([blob], `leonida-${caseId}.png`, {
+                  type: "image/png",
                 });
-                return;
-              }
-            } catch {}
-            try {
-              await navigator.clipboard.writeText(window.location.href);
-            } catch {}
-          }}
-          className="flex-1 rounded-full border border-[var(--line)] bg-[var(--surface)] py-3 text-center text-sm font-semibold tracking-[-0.2px] text-[var(--ink)] transition-colors hover:border-[var(--line-strong)]"
-        >
-          Share
-        </button>
+                if (navigator.canShare?.({ files: [file] })) {
+                  await navigator.share({
+                    files: [file],
+                    title: `Leonida PD — ${caseId} dismissed`,
+                    text: "Altered the exhibit until forensics lost the match. #BuiltWithImageEditor @unlayer",
+                  });
+                  return;
+                }
+              } catch {}
+              try {
+                await navigator.clipboard.writeText(window.location.href);
+              } catch {}
+            }}
+          >
+            Share
+          </button>
+        </div>
       </div>
-      <p className="micro mt-2 text-center text-[var(--faint)]">Share with #BuiltWithImageEditor + @unlayer</p>
     </div>
   );
 }
 
-function Complete({ posters, onRestart }: { posters: string[]; onRestart: () => void }) {
+// ── Complete ───────────────────────────────────────────────────
+function CaseClosed({
+  posters,
+  onRestart,
+}: {
+  posters: string[];
+  onRestart: () => void;
+}) {
   const allDone = posters.length === EVIDENCE.length;
+
   return (
-    <div className="flex flex-1 flex-col items-center gap-6 py-8 text-center">
-      <div className={`rounded-full px-4 py-2 text-xs font-semibold tracking-[-0.2px] ${allDone ? "bg-[var(--success)] text-[#042a1e]" : "bg-[var(--warning)] text-[#1a1300]"}`}>
-        {allDone ? "★ All cases dismissed — wanted level cleared ★" : `Case file closed — ${posters.length} / ${EVIDENCE.length} dismissed`}
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="flex flex-col gap-7 pt-4 lg:pt-0"
+    >
+      <div className="flex flex-col items-start gap-4">
+        <span
+          className={`stamp text-[16px] sm:text-[19px] ${
+            allDone ? "stamp-green" : "stamp-red"
+          }`}
+        >
+          {allDone ? "Case dismissed" : "Case remains open"}
+        </span>
+
+        <h2 className="stamp-type max-w-[20ch] text-[40px] leading-[0.9] text-[var(--folder)] sm:text-[62px]">
+          {allDone
+            ? "Three exhibits, no matches."
+            : `${posters.length} of ${EVIDENCE.length} exhibits altered.`}
+        </h2>
+
+        <p className="max-w-[58ch] text-[13.5px] leading-[1.75] text-[var(--on-desk-muted)]">
+          {allDone
+            ? "Forensics failed to match a single flagged region across the whole file. The dismissal notices are yours to keep."
+            : "Some exhibits still read. Reopen a flagged exhibit and obscure the region forensics caught."}
+        </p>
       </div>
-      <h2 className="display text-[32px] text-[var(--ink)] sm:text-[40px]">{allDone ? "You got away with it." : "Case file closed."}</h2>
-      <p className="max-w-md text-sm leading-[1.65] tracking-[-0.15px] text-[var(--muted)]">
-        {allDone ? "Forensics failed on every piece of evidence. The posters are yours." : "Some evidence still matched. Retry the busted cases or take what you earned."}
-      </p>
+
       {posters.length > 0 ? (
-        <div className="grid w-full gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {posters.map((url, i) => (
-            <div key={i} className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)]">
+            <div key={i} className="border border-[var(--desk-edge)] bg-[var(--desk-deep)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt={`Poster ${i + 1}`} className="h-auto w-full object-contain" />
-              <div className="border-t border-[var(--line)] p-2.5">
-                <a href={url} download={`leonida-poster-${i + 1}.png`} className="block rounded-full bg-[var(--accent)] py-2.5 text-center text-sm font-semibold tracking-[-0.2px] text-[var(--on-accent)] hover:bg-[var(--accent-hover)]">
+              <img
+                src={url}
+                alt={`Dismissal notice ${i + 1}`}
+                className="block h-auto w-full border-b border-[var(--desk-edge)]"
+              />
+              <div className="p-2.5">
+                <a
+                  href={url}
+                  download={`leonida-notice-${i + 1}.png`}
+                  className="btn w-full"
+                >
                   Download
                 </a>
               </div>
@@ -456,16 +787,42 @@ function Complete({ posters, onRestart }: { posters: string[]; onRestart: () => 
           ))}
         </div>
       ) : (
-        <p className="text-sm text-[var(--faint)]">No posters yet — dismiss at least one case.</p>
+        <div className="border border-dashed border-[var(--desk-edge)] px-5 py-8">
+          <p className="text-[13px] text-[var(--on-desk-muted)]">
+            No dismissal notices yet. Alter an exhibit and submit it to forensics.
+          </p>
+        </div>
       )}
-      <div className="flex flex-wrap justify-center gap-3">
-        <button onClick={onRestart} className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-6 py-3 text-sm font-semibold tracking-[-0.2px] text-[var(--ink)] hover:border-[var(--line-strong)]">
-          Play again
+
+      <div className="flex flex-wrap gap-3">
+        <button onClick={onRestart} className="btn btn-solid" type="button">
+          Reopen case 06
         </button>
-        <a href="https://github.com/JUICEWRLD998/leonida" target="_blank" rel="noopener noreferrer" className="rounded-full bg-[var(--surface)] px-6 py-3 text-sm font-semibold tracking-[-0.2px] text-[var(--ink)] ring-1 ring-[var(--line)] hover:bg-[var(--surface-raised)]">
-          View on GitHub →
+        <a
+          href="https://github.com/JUICEWRLD998/leonida"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn"
+        >
+          Source on GitHub
         </a>
       </div>
-    </div>
+    </motion.div>
+  );
+}
+
+// ── Colophon ───────────────────────────────────────────────────
+function Colophon() {
+  return (
+    <footer className="border-t border-[var(--desk-edge)]">
+      <div className="mx-auto flex max-w-[1440px] flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-4 py-5 sm:px-6">
+        <p className="field text-[var(--on-desk-faint)]">
+          Built with React Image Editor · #BuiltWithImageEditor
+        </p>
+        <p className="field text-[var(--on-desk-faint)]">
+          A work of fiction. Not affiliated with Rockstar Games.
+        </p>
+      </div>
+    </footer>
   );
 }

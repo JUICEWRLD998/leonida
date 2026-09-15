@@ -9,10 +9,13 @@ const ImageEditor = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[520px] items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
+      <div className="flex h-[520px] items-center justify-center border border-[var(--desk-edge)] bg-[var(--desk-deep)]">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
-          <span className="micro text-[var(--muted)]">Initializing forensics terminal…</span>
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--desk-edge)] border-t-[var(--folder)]" />
+          <span className="field text-[var(--on-desk-muted)]">
+            Mounting exhibit
+            <span className="caret">_</span>
+          </span>
         </div>
       </div>
     ),
@@ -68,52 +71,83 @@ export function ForensicsTerminal({ image, onSubmit, onError }: Props) {
     [startPolling]
   );
 
-  const handleSave = useCallback((r: ImageEditorSaveResult) => onSubmit(r.dataUrl, r.blob), [onSubmit]);
-  const handleError = useCallback((err: Error) => onError?.(err.message || "Terminal failed to load"), [onError]);
+  const handleSave = useCallback(
+    (r: ImageEditorSaveResult) => onSubmit(r.dataUrl, r.blob),
+    [onSubmit]
+  );
+  const handleError = useCallback(
+    (err: Error) => onError?.(err.message || "Terminal failed to mount"),
+    [onError]
+  );
   const handleLoadError = useCallback(() => {
     setLoadFailed(true);
-    onError?.("Evidence image failed to load into editor");
+    onError?.("Exhibit failed to mount in the editor");
   }, [onError]);
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Status */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 py-2.5">
-        <div className="flex items-center gap-2.5">
-          <span className={`h-2 w-2 rounded-full ${ready ? "bg-[var(--success)] shadow-[0_0_8px_rgba(20,240,184,0.5)]" : "bg-[var(--warning)] animate-[pulse-dot_1.2s_ease-in-out_infinite]"}`} />
-          <span className="text-xs font-medium tracking-[-0.15px] text-[var(--ink)]">
-            {loadFailed ? "Evidence corrupted — retry" : ready ? "System online — edit to tamper" : "Booting…"}
+      {/* Status, read as a clerk's stamp line rather than a toolbar */}
+      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 border-y border-[var(--desk-edge)] py-3">
+        <span className="flex items-baseline gap-2">
+          <span className="field text-[var(--on-desk-faint)]">Terminal</span>
+          <span
+            className="field"
+            style={{
+              color: loadFailed
+                ? "var(--stamp)"
+                : ready
+                  ? "var(--clear)"
+                  : "var(--folder)",
+            }}
+          >
+            {loadFailed ? "Failed" : ready ? "Ready" : "Mounting"}
           </span>
-        </div>
-        <span className="micro hidden text-[var(--faint)] sm:inline">Crop · Draw · Filter · Sticker · Text · Shapes · Frame</span>
+        </span>
+
         {ready && (
-          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold tracking-[-0.15px] ${hasChanges ? "bg-[var(--success-soft)] text-[var(--success)] ring-1 ring-[var(--success-line)]" : "bg-[var(--paper-soft)] text-[var(--faint)] ring-1 ring-[var(--line)]"}`}>
-            {hasChanges ? "● Tampered" : "○ No changes"}
+          <span className="flex items-baseline gap-2">
+            <span className="field text-[var(--on-desk-faint)]">Exhibit state</span>
+            <span
+              className="field"
+              style={{ color: hasChanges ? "var(--folder)" : "var(--on-desk-faint)" }}
+            >
+              {hasChanges ? "Altered" : "Unchanged"}
+            </span>
           </span>
         )}
+
+        <span className="field ml-auto text-[var(--on-desk-faint)]">
+          Save inside the editor to submit
+        </span>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-card)]">
-        <ImageEditor
-          image={image}
-          minHeight={520}
-          style={{ borderRadius: 16, overflow: "hidden" } as React.CSSProperties}
-          options={{ theme: "dark" }}
-          onLoad={handleLoad}
-          onSave={handleSave}
-          onLoadError={handleLoadError}
-          onError={handleError}
-        />
+      <div className="border border-[var(--desk-edge)] bg-[var(--desk-deep)] p-2.5">
+        <div className="overflow-hidden border border-[var(--desk-edge)]">
+          <ImageEditor
+            image={image}
+            minHeight={520}
+            style={{ borderRadius: 0, overflow: "hidden" } as React.CSSProperties}
+            options={{ theme: "dark" }}
+            onLoad={handleLoad}
+            onSave={handleSave}
+            onLoadError={handleLoadError}
+            onError={handleError}
+          />
+        </div>
       </div>
 
       {loadFailed && (
-        <div className="rounded-2xl border border-[var(--danger-line)] bg-[var(--danger-soft)] px-4 py-3 text-center">
-          <p className="text-sm font-medium text-[var(--danger)]">Evidence failed to load. Try again or go back to the locker.</p>
+        <div className="border border-[var(--stamp)] bg-[var(--stamp-wash)] px-4 py-3">
+          <p className="text-[13px] text-[var(--stamp)]">
+            The exhibit failed to mount. Close the terminal and open it again.
+          </p>
         </div>
       )}
 
-      <p className="micro text-center text-[var(--faint)]">
-        {ready ? "Edit the image above, then press Save inside the editor to submit to forensics." : "Waiting for terminal…"}
+      <p className="text-[12.5px] leading-[1.7] text-[var(--on-desk-muted)]">
+        {ready
+          ? "Alter the exhibit so the flagged zones can no longer be read, then save inside the editor to submit it to forensics."
+          : "Waiting for the editor to mount the exhibit."}
       </p>
     </div>
   );
