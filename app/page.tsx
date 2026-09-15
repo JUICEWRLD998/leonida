@@ -353,99 +353,102 @@ function DocketRail({
 
   return (
     <aside className="border-b border-[var(--desk-edge)] pb-1 lg:sticky lg:top-[73px] lg:self-start lg:border-b-0 lg:pt-8 lg:pb-0">
-      <p className="field px-3 pt-3 text-[var(--on-desk-faint)] lg:pt-0">
-        Docket — exhibits filed
-      </p>
+      {/* The rail sits directly on the backdrop, which is brightest exactly
+          where it shouldn't be for text. This scrim gives its labels a
+          predictable ground instead of one that depends on the photo. */}
+      <div className="mx-3 mb-1 border border-[var(--desk-edge)] bg-[var(--desk-deep)]/72 px-3 py-3 backdrop-blur-[2px] lg:mx-0 lg:px-3.5">
+        <p className="field text-[var(--on-desk-muted)]">Docket — exhibits filed</p>
 
-      {/* Phone: a compact strip of case references. The full entries need a
-          column, and spending the viewport on them buries the work. */}
-      <div className="mt-2 flex gap-1.5 overflow-x-auto px-3 lg:hidden">
-        {EVIDENCE.map((ev, i) => {
-          const done = cleared > i;
-          const active = live && index === i;
-          const { court } = splitLabel(ev.label, ev.id);
-          return (
-            <button
-              key={ev.id}
-              type="button"
-              onClick={() => onJump(i)}
-              aria-current={active ? "true" : undefined}
-              className={`flex shrink-0 items-baseline gap-2 border px-2.5 py-2 ${
-                active
-                  ? "border-[var(--folder-deep)] bg-[var(--folder)]/12"
-                  : "border-[var(--desk-edge)]"
-              }`}
-            >
-              <span className="field text-[var(--on-desk)]">{court}</span>
-              <span
-                className="field"
-                style={{
-                  color: done
-                    ? "var(--clear-ink)"
-                    : active
-                      ? "var(--folder)"
-                      : "var(--on-desk-faint)",
-                }}
+        {/* Phone: a compact strip of case references. The full entries need a
+            column, and spending the viewport on them buries the work. */}
+        <div className="mt-2 flex gap-1.5 overflow-x-auto lg:hidden">
+          {EVIDENCE.map((ev, i) => {
+            const done = cleared > i;
+            const active = live && index === i;
+            const { court } = splitLabel(ev.label, ev.id);
+            return (
+              <button
+                key={ev.id}
+                type="button"
+                onClick={() => onJump(i)}
+                aria-current={active ? "true" : undefined}
+                className={`flex shrink-0 items-baseline gap-2 border px-2.5 py-2 ${
+                  active
+                    ? "border-[var(--folder-deep)] bg-[var(--folder)]/12"
+                    : "border-[var(--desk-edge)]"
+                }`}
               >
-                {done ? "Clrd" : active ? "Open" : "Pend"}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-2 hidden lg:block">
-        {EVIDENCE.map((ev, i) => {
-          const done = cleared > i;
-          const active = live && index === i;
-          const { court, name } = splitLabel(ev.label, ev.id);
-          return (
-            <button
-              key={ev.id}
-              type="button"
-              onClick={() => onJump(i)}
-              className={`docket w-full ${active ? "docket-active" : ""}`}
-              aria-current={active ? "true" : undefined}
-            >
-              <span className="field w-[52px] shrink-0 text-[var(--on-desk-faint)]">
-                {court}
-              </span>
-              <span className="min-w-0 flex-1">
+                <span className="field text-[var(--on-desk)]">{court}</span>
                 <span
-                  className={`block truncate text-[14px] ${
-                    active ? "text-[var(--on-desk)]" : "text-[var(--on-desk-muted)]"
-                  }`}
+                  className="field"
+                  style={{
+                    color: done
+                      ? "var(--clear-ink)"
+                      : active
+                        ? "var(--folder)"
+                        : "var(--on-desk-faint)",
+                  }}
                 >
-                  {name}
+                  {done ? "Clrd" : active ? "Open" : "Pend"}
                 </span>
-                <span className="mt-1 flex flex-col gap-0.5">
-                  {ev.flags.map((f) => (
-                    <span key={f} className="field text-[var(--stamp-ink)]">
-                      {f.replace(" DETECTED", "")}
-                    </span>
-                  ))}
-                </span>
-              </span>
-              <span
-                className="field shrink-0"
-                style={{
-                  color: done
-                    ? "var(--clear-ink)"
-                    : active
-                      ? "var(--folder)"
-                      : "var(--on-desk-faint)",
-                }}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-2 hidden lg:block">
+          {EVIDENCE.map((ev, i) => {
+            const done = cleared > i;
+            const active = live && index === i;
+            const { court, name } = splitLabel(ev.label, ev.id);
+            return (
+              <button
+                key={ev.id}
+                type="button"
+                onClick={() => onJump(i)}
+                className={`docket w-full ${active ? "docket-active" : ""}`}
+                aria-current={active ? "true" : undefined}
               >
-                {done ? "Clrd" : active ? "Open" : "Pend"}
-              </span>
-            </button>
-          );
-        })}
+                <span className="field w-[52px] shrink-0 text-[var(--on-desk-faint)]">
+                  {court}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span
+                    className={`block truncate text-[14px] ${
+                      active ? "text-[var(--on-desk)]" : "text-[var(--on-desk-muted)]"
+                    }`}
+                  >
+                    {name}
+                  </span>
+                  <span className="mt-1 flex flex-col gap-0.5">
+                    {ev.flags.map((f) => (
+                      <span key={f} className="field text-[var(--stamp-ink)]">
+                        {f.replace(" DETECTED", "")}
+                      </span>
+                    ))}
+                  </span>
+                </span>
+                <span
+                  className="field shrink-0"
+                  style={{
+                    color: done
+                      ? "var(--clear-ink)"
+                      : active
+                        ? "var(--folder)"
+                        : "var(--on-desk-faint)",
+                  }}
+                >
+                  {done ? "Clrd" : active ? "Open" : "Pend"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Chain of custody */}
-      <div className="mt-5 hidden border border-[var(--desk-edge)] p-4 lg:block">
-        <p className="field text-[var(--on-desk-faint)]">Chain of custody</p>
+      <div className="mx-3 hidden border border-[var(--desk-edge)] bg-[var(--desk-deep)]/72 p-4 backdrop-blur-[2px] lg:mx-0 lg:block">
+        <p className="field text-[var(--on-desk-muted)]">Chain of custody</p>
         <div className="mt-3 space-y-2">
           {[
             ["Received", "02:31"],
@@ -904,12 +907,17 @@ function CaseClosed({
 function Colophon() {
   return (
     <footer className="border-t border-[var(--desk-edge)]">
-      <div className="mx-auto flex max-w-[1440px] flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-4 py-5 sm:px-6">
-        <p className="field text-[var(--on-desk-faint)]">
-          Built with React Image Editor · #BuiltWithImageEditor
-        </p>
-        <p className="field text-[var(--on-desk-faint)]">
-          A work of fiction. Not affiliated with Rockstar Games.
+      <div className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+          <p className="field text-[var(--on-desk-faint)]">
+            Built with React Image Editor · #BuiltWithImageEditor
+          </p>
+          <p className="field text-[var(--on-desk-faint)]">
+            A work of fiction. Not affiliated with Rockstar Games.
+          </p>
+        </div>
+        <p className="field mt-2.5 text-[var(--on-desk-faint)] opacity-75">
+          Backdrop: Grand Theft Auto VI key art © Rockstar Games — used here as fan homage
         </p>
       </div>
     </footer>

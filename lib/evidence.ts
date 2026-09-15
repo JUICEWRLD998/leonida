@@ -71,19 +71,19 @@ function cctvSvg(opts: {
   <defs>
     <pattern id="grain" width="3" height="3" patternUnits="userSpaceOnUse">
       <rect width="3" height="3" fill="${opts.bg}"/>
-      <rect x="0" y="0" width="1" height="1" fill="#FFFFFF" opacity="0.05"/>
-      <rect x="2" y="1" width="1" height="1" fill="#000000" opacity="0.14"/>
-      <rect x="1" y="2" width="1" height="1" fill="#FFFFFF" opacity="0.035"/>
+      <rect x="0" y="0" width="1" height="1" fill="#FFFFFF" opacity="0.03"/>
+      <rect x="2" y="1" width="1" height="1" fill="#000000" opacity="0.07"/>
+      <rect x="1" y="2" width="1" height="1" fill="#FFFFFF" opacity="0.02"/>
     </pattern>
     <radialGradient id="lens" cx="0.5" cy="0.46" r="0.78">
       <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
-      <stop offset="62%" stop-color="#000000" stop-opacity="0.12"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.62"/>
+      <stop offset="62%" stop-color="#000000" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.34"/>
     </radialGradient>
     <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.07"/>
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.035"/>
       <stop offset="45%" stop-color="#FFFFFF" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.05"/>
     </linearGradient>
   </defs>
 
@@ -101,8 +101,9 @@ function cctvSvg(opts: {
     ${dropouts}
   </g>
 
-  <!-- scanlines -->
-  <g opacity="0.07">
+  <!-- scanlines: present but fine, so they add texture without fogging the
+       scene. Heavy lines over a dark scene read as a blurry image. -->
+  <g opacity="0.045">
     ${Array.from({ length: 60 }, (_, i) => `<rect y="${i * 8}" width="800" height="1" fill="${opts.accent}"/>`).join("")}
   </g>
 
