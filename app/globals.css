@@ -18,10 +18,12 @@
 */
 
 :root {
-  /* ── The desk ── */
-  --desk: #1c1915;
-  --desk-deep: #14110d;
-  --desk-edge: #30281e;
+  /* ── The desk ──
+     Vice City dusk: a violet-navy ground rather than a warm brown, so the
+     chrome sits in the same world as the backdrop behind it. */
+  --desk: #15102b;
+  --desk-deep: #0d0a1c;
+  --desk-edge: #2c2350;
 
   /* ── Manila folder ── */
   --folder: #c9a96a;
@@ -40,6 +42,12 @@
   /* ── The exhibit itself: a developed surveillance still. Cold, against warm paper. ── */
   --exhibit: #0a0c0e;
 
+  /* ── Vice City neon — signage only: the kerb strip and one live marker ── */
+  --vice-pink: #ff4d9d;
+  --vice-orange: #ff7a3d;
+  --vice-violet: #7b4bd8;
+  --vice-teal: #2fe0d0;
+
   /* ── Stamps ── */
   --stamp: #a33220;
   --stamp-wash: rgba(163, 50, 32, 0.12);
@@ -51,9 +59,9 @@
   --tape: #0b0906;
 
   /* ── Legibility on the desk ── */
-  --on-desk: #ded4c2;
-  --on-desk-muted: #9a8f7c;
-  --on-desk-faint: #6d6455;
+  --on-desk: #e6dff2;
+  --on-desk-muted: #a094bd;
+  --on-desk-faint: #6f6690;
 
   /* ── Geometry: paper is square. Nothing in a property room is a pill. ── */
   --r: 1px;
@@ -111,10 +119,57 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
   opacity: 0.5;
   background-image: radial-gradient(var(--desk-edge) 0.5px, transparent 0.5px);
   background-size: 4px 4px;
+}
+
+/* ── Vice backdrop ──
+   The scene the desk sits in. Blurred and heavily scrimmed: the source art is
+   only 565px wide, so it is upscaled and must never be read as a real
+   photograph. It carries mood at the edges while the work stays legible. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: url("/gta-pic.jpg") center 38% / cover no-repeat;
+  transform: scale(1.08);
+  filter: blur(2.5px) saturate(1.15);
+}
+
+.backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse at 50% 42%,
+      rgba(13, 10, 28, 0.58) 0%,
+      rgba(13, 10, 28, 0.9) 68%,
+      rgba(9, 7, 20, 0.98) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(13, 10, 28, 0.92) 0%,
+      rgba(13, 10, 28, 0.6) 26%,
+      rgba(13, 10, 28, 0.78) 100%
+    );
+}
+
+/* ── Neon kerb — the sunset gradient, spent as a single sign line ── */
+.vice-kerb {
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--vice-violet) 0%,
+    var(--vice-pink) 26%,
+    var(--vice-orange) 52%,
+    var(--vice-pink) 76%,
+    var(--vice-violet) 100%
+  );
+  box-shadow: 0 0 14px rgba(255, 77, 157, 0.4);
 }
 
 ::selection {

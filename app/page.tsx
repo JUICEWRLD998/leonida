@@ -118,8 +118,12 @@ export default function Home() {
   );
 
   return (
-    <div className="relative z-[1] flex min-h-screen flex-col">
-      <Letterhead onRestart={handleRestart} cleared={cleared} />
+    <>
+      {/* Sits below the grain layer, which is below the work itself. */}
+      <div className="backdrop" aria-hidden />
+
+      <div className="relative z-[2] flex min-h-screen flex-col">
+        <Letterhead onRestart={handleRestart} cleared={cleared} />
 
       <div className="mx-auto grid w-full max-w-[1440px] flex-1 grid-cols-1 gap-0 px-4 sm:px-6 lg:grid-cols-[290px_1fr] lg:gap-8 lg:py-8">
         <DocketRail
@@ -201,8 +205,9 @@ export default function Home() {
         </main>
       </div>
 
-      <Colophon />
-    </div>
+        <Colophon />
+      </div>
+    </>
   );
 }
 
@@ -224,7 +229,8 @@ function Phase({ children }: { children: React.ReactNode }) {
 // ── Letterhead ─────────────────────────────────────────────────
 function Letterhead({ onRestart, cleared }: { onRestart: () => void; cleared: number }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-[var(--desk-edge)] bg-[var(--desk)]/96 backdrop-blur-[2px]">
+    <header className="sticky top-0 z-30 border-b border-[var(--desk-edge)] bg-[var(--desk)]/72 backdrop-blur-[6px]">
+      <div className="vice-kerb" />
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
         <button
           onClick={onRestart}

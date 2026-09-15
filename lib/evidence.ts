@@ -199,7 +199,7 @@ const EVIDENCE_06B_SVG = cctvSvg({
       <rect x="340" y="285" width="130" height="36" rx="4" fill="#FFCC02" stroke="#FF3B30" stroke-width="1.2" stroke-dasharray="5 4"/>
       <text x="405" y="307" text-anchor="middle" font-family="monospace" font-size="11" fill="#0D0D0F" font-weight="bold">LEON 06</text>
     </g>
-    <text x="405" y="265" text-anchor="middle" font-family="monospace" font-size="7" fill="#FF3B30" font-weight="bold">▲ FACE &nbsp; ▲ PLATE</text>
+    <text x="405" y="265" text-anchor="middle" font-family="monospace" font-size="7" fill="#FF3B30" font-weight="bold">▲ FACE &#160; ▲ PLATE</text>
   `,
 });
 
@@ -218,14 +218,14 @@ const EVIDENCE_06C_SVG = cctvSvg({
     <rect x="200" y="185" width="400" height="2" fill="#33333A" opacity="0.2"/>
     <!-- ledger lines + handwriting -->
     <g font-family="monospace" font-size="10" fill="#3A3630">
-      <text x="210" y="210">06-14 &nbsp; R. VANCE &nbsp;&nbsp; RM 07 &nbsp; $80</text>
-      <text x="210" y="230">06-14 &nbsp; L. TORRES &nbsp; RM 12 &nbsp; $80</text>
+      <text x="210" y="210">06-14 &#160; R. VANCE &#160;&#160; RM 07 &#160; $80</text>
+      <text x="210" y="230">06-14 &#160; L. TORRES &#160; RM 12 &#160; $80</text>
       <g opacity="0.95">
         <rect x="205" y="238" width="260" height="22" rx="3" fill="none" stroke="#FF3B30" stroke-width="1.2" stroke-dasharray="5 4"/>
-        <text x="210" y="253" fill="#FF3B30" font-weight="bold" font-size="10">06-14 &nbsp; J. WRLD &nbsp;&nbsp; RM 06 &nbsp; $120</text>
+        <text x="210" y="253" fill="#FF3B30" font-weight="bold" font-size="10">06-14 &#160; J. WRLD &#160;&#160; RM 06 &#160; $120</text>
         <text x="335" y="235" font-size="7" fill="#FF3B30" font-weight="bold">▲ LEDGER ZONE</text>
       </g>
-      <text x="210" y="275">06-15 &nbsp; M. DIAZ &nbsp;&nbsp;&nbsp; RM 03 &nbsp; $60</text>
+      <text x="210" y="275">06-15 &#160; M. DIAZ &#160;&#160;&#160; RM 03 &#160; $60</text>
     </g>
     <!-- hands -->
     <ellipse cx="320" cy="330" rx="45" ry="18" fill="#B8B0A2" opacity="0.85"/>
