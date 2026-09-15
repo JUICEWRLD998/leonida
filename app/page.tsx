@@ -3,13 +3,13 @@
 import { useState, useCallback, useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { EVIDENCE } from "@/lib/evidence";
-import { scoreForensics, type ScoreResult } from "@/lib/scorer";
+import { scoreForensics, ForensicsUnavailableError, type ScoreResult } from "@/lib/scorer";
 import { generatePoster } from "@/lib/poster";
 import { ForensicsTerminal } from "@/components/ForensicsTerminal";
 import { VerdictStamp } from "@/components/VerdictStamp";
 import { ScanReport } from "@/components/ScanReport";
 
-type GamePhase = "landing" | "evidence" | "terminal" | "scanning" | "verdict" | "complete";
+type GamePhase = "landing" | "evidence" | "terminal" | "scanning" | "verdict" | "unavailable" | "complete";
 
 type GameState = {
   evidenceIndex: number;
@@ -18,6 +18,8 @@ type GameState = {
   score: ScoreResult | null;
   posterUrl: string | null;
   posters: string[];
+  /** Set when forensics could not read the pixels at all. */
+  failure: string | null;
 };
 
 // "CASE 06-A — CORNER STORE" → { id: "06-A", name: "CORNER STORE" }
@@ -35,6 +37,7 @@ export default function Home() {
     score: null,
     posterUrl: null,
     posters: [],
+    failure: null,
   });
 
   const evidence = EVIDENCE[state.evidenceIndex];
@@ -50,22 +53,27 @@ export default function Home() {
 
   const handleSubmit = useCallback(
     async (dataUrl: string) => {
-      setState((s) => ({ ...s, phase: "scanning", editedDataUrl: dataUrl }));
+      setState((s) => ({ ...s, phase: "scanning", editedDataUrl: dataUrl, failure: null }));
       await new Promise((r) => setTimeout(r, 2200));
       const ev = EVIDENCE[state.evidenceIndex];
+
       let result: ScoreResult;
       try {
         result = await scoreForensics(ev.originalDataUrl, dataUrl, ev);
-      } catch {
-        result = {
-          regions: [
-            { region: "face", obscuredPercent: 0, passed: false },
-            { region: "plate", obscuredPercent: 0, passed: false },
-          ],
-          tamperScore: 0,
-          verdict: "BUSTED",
-        };
+      } catch (err) {
+        // A broken analysis is not a failed tampering. Saying BUSTED here would
+        // tell the player they were caught when nothing was actually read.
+        setState((s) => ({
+          ...s,
+          phase: "unavailable",
+          failure:
+            err instanceof ForensicsUnavailableError
+              ? err.message
+              : "Forensic analysis could not complete",
+        }));
+        return;
       }
+
       let posterUrl: string | null = null;
       if (result.verdict === "DISMISSED") {
         try {
@@ -97,11 +105,19 @@ export default function Home() {
         editedDataUrl: null,
         score: null,
         posterUrl: null,
+        failure: null,
       }));
   }, [isLast]);
 
   const handleRetry = useCallback(
-    () => setState((s) => ({ ...s, phase: "terminal", score: null, posterUrl: null })),
+    () =>
+      setState((s) => ({
+        ...s,
+        phase: "terminal",
+        score: null,
+        posterUrl: null,
+        failure: null,
+      })),
     []
   );
   const handleRestart = useCallback(
@@ -113,6 +129,7 @@ export default function Home() {
         score: null,
         posterUrl: null,
         posters: [],
+        failure: null,
       }),
     []
   );
@@ -175,6 +192,31 @@ export default function Home() {
             {state.phase === "scanning" && (
               <Phase key={`scanning-${state.evidenceIndex}`}>
                 <RedactionSweep evidence={evidence} editedUrl={state.editedDataUrl} />
+              </Phase>
+            )}
+
+            {state.phase === "unavailable" && (
+              <Phase key={`unavailable-${state.evidenceIndex}`}>
+                <div className="flex flex-col items-start gap-5 pt-4 lg:pt-0">
+                  <span className="stamp stamp-red inline-block text-[15px] sm:text-[19px]">
+                    Forensics unavailable
+                  </span>
+                  <h2 className="stamp-type max-w-[22ch] text-[30px] leading-[0.92] text-[var(--folder)] sm:text-[44px]">
+                    The exhibit could not be read.
+                  </h2>
+                  <p className="max-w-[58ch] text-[13.5px] leading-[1.75] text-[var(--on-desk-muted)]">
+                    {state.failure ?? "Forensic analysis could not complete"}. Nothing was
+                    scored, so this exhibit still stands as filed.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <button onClick={handleRetry} className="btn btn-solid" type="button">
+                      Resubmit the exhibit
+                    </button>
+                    <button onClick={handleBack} className="btn" type="button">
+                      Back to the exhibit
+                    </button>
+                  </div>
+                </div>
               </Phase>
             )}
 
