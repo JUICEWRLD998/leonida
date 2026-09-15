@@ -271,7 +271,7 @@ function Phase({ children }: { children: React.ReactNode }) {
 // ── Letterhead ─────────────────────────────────────────────────
 function Letterhead({ onRestart, cleared }: { onRestart: () => void; cleared: number }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-[var(--desk-edge)] bg-[var(--desk)]/72 backdrop-blur-[6px]">
+    <header className="sticky top-0 z-30 border-b border-[var(--desk-edge)] bg-[var(--desk-deep)]">
       <div className="vice-kerb" />
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
         <button
@@ -356,7 +356,7 @@ function DocketRail({
       {/* The rail sits directly on the backdrop, which is brightest exactly
           where it shouldn't be for text. This scrim gives its labels a
           predictable ground instead of one that depends on the photo. */}
-      <div className="mx-3 mb-1 border border-[var(--desk-edge)] bg-[var(--desk-deep)]/72 px-3 py-3 backdrop-blur-[2px] lg:mx-0 lg:px-3.5">
+      <div className="mx-3 mb-1 border border-[var(--desk-edge)] bg-[var(--desk-deep)] px-3 py-3 lg:mx-0 lg:px-3.5">
         <p className="field text-[var(--on-desk-muted)]">Docket — exhibits filed</p>
 
         {/* Phone: a compact strip of case references. The full entries need a
@@ -447,7 +447,7 @@ function DocketRail({
       </div>
 
       {/* Chain of custody */}
-      <div className="mx-3 hidden border border-[var(--desk-edge)] bg-[var(--desk-deep)]/72 p-4 backdrop-blur-[2px] lg:mx-0 lg:block">
+      <div className="mx-3 hidden border border-[var(--desk-edge)] bg-[var(--desk-deep)] p-4 lg:mx-0 lg:block">
         <p className="field text-[var(--on-desk-muted)]">Chain of custody</p>
         <div className="mt-3 space-y-2">
           {[
@@ -631,7 +631,7 @@ function ExhibitFolder({
             {/* Flagged zones, marked on the still itself */}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
               {evidence.flags.map((f) => (
-                <span key={f} className="stamp stamp-red bg-[var(--desk)]/70 text-[11px] backdrop-blur-[2px]">
+                <span key={f} className="stamp stamp-red bg-[var(--desk)] text-[11px]">
                   {f}
                 </span>
               ))}
