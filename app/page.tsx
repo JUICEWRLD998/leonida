@@ -159,7 +159,11 @@ export default function Home() {
                       Close terminal
                     </button>
                   </div>
-                  <ForensicsTerminal image={evidence.imageBase64} onSubmit={handleSubmit} />
+                  <ForensicsTerminal
+                    image={evidence.imageBase64}
+                    onSubmit={handleSubmit}
+                    onCancel={handleBack}
+                  />
                 </div>
               </Phase>
             )}
